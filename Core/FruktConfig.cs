@@ -9,6 +9,9 @@ namespace FruktSharedLibrary.Core
     public static class FruktConfig
     {
         private static MelonPreferences_Category _category;
+
+        /// <summary>The library's preference category (shown as the "Library settings" page).</summary>
+        internal static MelonPreferences_Category Category => _category;
         private static MelonPreferences_Entry<bool> _debugLogging;
         private static MelonPreferences_Entry<string> _modMenuKey;
         private static MelonPreferences_Entry<bool> _showNotifications;

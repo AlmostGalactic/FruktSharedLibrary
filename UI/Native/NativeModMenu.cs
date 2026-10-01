@@ -652,7 +652,7 @@ namespace FruktSharedLibrary.UI
 
         private static IEnumerable<ModMenuPage> VisiblePages()
         {
-            foreach (var page in ModMenu.Pages)
+            foreach (var page in ModMenu.OrderedPages())
             {
                 if (SafeVisible(page))
                     yield return page;

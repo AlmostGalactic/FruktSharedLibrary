@@ -20,7 +20,8 @@ own settings screens, and every mod that uses the library can add a page to it. 
 page with time scale, gravity, spawning, and actions for the creature under your crosshair. When FruitLib is
 also installed, its pause-menu line is already called MODS, so the library's line is called **MOD MENU**.
 
-The menu can be changed in `UserData/MelonPreferences.cfg` under `[FruktSharedLibrary]`:
+These settings are on the menu's *Library settings* page, or in `UserData/MelonPreferences.cfg` under
+`[FruktSharedLibrary]`:
 
 | Preference          | Default | Meaning                                                        |
 |---------------------|---------|----------------------------------------------------------------|
@@ -76,6 +77,7 @@ using FruktSharedLibrary.Spawning;
 using FruktSharedLibrary.UI;
 using Il2CppLVA.NodesHierarchy.Benchmark.Variants; // HumanoidNodeTagValue
 using MelonLoader;
+using MelonLoader.Preferences; // ValueRange
 using UnityEngine;
 using UnityEngine.InputSystem; // Key
 
@@ -114,6 +116,12 @@ public class ExampleMod : MelonMod
                 var target = Creatures.GetNearest(LocalPlayer.Position, livingOnly: true);
                 target?.GetLimb(HumanoidNodeTagValue.Head)?.Detach();
             });
+
+        // Your own settings, editable in game on their own page
+        var prefs = MelonPreferences.CreateCategory("ExampleMod", "Example settings");
+        prefs.CreateEntry("ShowWelcome", true, "Show welcome", "Greet the player when a map loads.");
+        prefs.CreateEntry("Volume", 0.8f, "Volume", "How loud the example sounds are.", false, false, new ValueRange<float>(0f, 1f));
+        ModMenu.AddPreferencesPage(prefs);
     }
 }
 ```
@@ -165,7 +173,7 @@ variants, `GetRegisteredPrefabIds()`, `GetPrefabIds<T>()`, `GetPropNames()`, `Ge
 | Type | What it does |
 |------|--------------|
 | `ContextMenus` | Adds actions to the game's own right-click menus: `AddCreatureAction`, `AddLimbAction`, `AddAction(ContextMenuTarget, ...)` for props, firearms, the human spawner and spinners, and `AddToggle` (label shows ON/OFF). Actions can be added or removed at any time, including for objects that already exist. Priority: higher numbers are listed first (built-in actions use 995-1000). |
-| `ModMenu` | The shared mod menu, drawn in the game's own style. `AddPage(title)` returns a builder with `Header`, `Label` (fixed or live text), `Button`, `Toggle`, `Slider` (float or int), `Choice` (list of words or any enum), `KeyBinding` (click, then press a key), `Separator`, plus `OnlyWhen(condition)` and `WithTooltip(text)` for the item just added. `Open`/`Close`/`IsOpen`/`OpenChanged`. |
+| `ModMenu` | The shared mod menu, drawn in the game's own style. `AddPage(title)` returns a builder with `Header`, `Label` (fixed or live text), `Button`, `Toggle`, `Slider` (float or int), `Choice` (list of words or any enum), `KeyBinding` (click, then press a key), `Separator`, plus `OnlyWhen(condition)` and `WithTooltip(text)` for the item just added. `Open`/`Close`/`IsOpen`/`OpenChanged`. `AddPreferencesPage(category)` turns a MelonPreferences category into a settings page automatically (bool → toggle, ranged number → slider, enum → choice, "...Key" string → key binding, descriptions → hints) and saves changes to MelonPreferences.cfg. |
 | `PauseMenu` | `AddButton(label, onClick)` adds a real copy of the game's pause-menu line (same font, hover and animation). The returned entry has `SetLabel` and `VisibleWhen`. |
 | `Notifications` | `Show(text, seconds)`, `Show(text, color)`, `Warn(text)`: plates in the top-right corner, styled like the game. |
 | `FruktTheme` | The game's palette (`Background`, `Text`, `Muted`, `Dim`, `Line`, `Accent`, `Frame`), fonts (`DisplayFont` = GNF, `MonoFont` = Departure Mono) and `BorderSprite`. |

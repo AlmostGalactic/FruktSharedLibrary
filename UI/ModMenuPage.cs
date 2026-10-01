@@ -32,6 +32,9 @@ namespace FruktSharedLibrary.UI
         /// <summary>When set, the page is only listed while this returns true (e.g. only in the sandbox).</summary>
         public Func<bool> VisibleWhen { get; set; }
 
+        /// <summary>Listed after every other page (used for the library's own settings).</summary>
+        internal bool ListLast { get; set; }
+
         /// <summary>Bumped whenever items are added or removed, so the menu knows to rebuild.</summary>
         internal int Version { get; private set; }
 

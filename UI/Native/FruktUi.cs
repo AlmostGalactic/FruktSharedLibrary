@@ -174,7 +174,7 @@ namespace FruktSharedLibrary.UI
         {
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
-            var trimmed = text.Trim().TrimEnd(':').ToLowerInvariant().Replace(' ', '_');
+            var trimmed = text.Trim().TrimEnd(':').ToLowerInvariant().Replace(' ', '_').Replace('-', '_');
             return trimmed + ":";
         }
 

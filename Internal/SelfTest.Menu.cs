@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using FruktSharedLibrary.Controls;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.UI;
@@ -150,6 +151,21 @@ namespace FruktSharedLibrary.Internal
                 yield return Wait(1.5f);
                 Check("The simple menu draws without errors", ModMenu.DrawCount > drawsBefore && !ModMenu.DrawFailed, $"{ModMenu.DrawCount - drawsBefore} draws");
                 Check("Pages with the same title are merged", ModMenu.Pages.FindAll(p => p.Title == "Self-test menu").Count == 1);
+                ModMenu.Close();
+                ModMenu.ForceSimple = false;
+
+                Section("Preferences page", TestPreferencesPage);
+                var library = ModMenu.Pages.Find(p => p.Title == "Library settings");
+                Check("The library's settings page exists and is listed last", library != null && ModMenu.OrderedPages().Last() == library);
+                if (library != null)
+                {
+                    ModMenu.Open();
+                    yield return Wait(0.3f);
+                    NativeModMenu.ShowPage(library);
+                    yield return Wait(1f);
+                    Shot("menu-library-settings");
+                    yield return Wait(1.5f);
+                }
             }
             finally
             {
@@ -157,6 +173,65 @@ namespace FruktSharedLibrary.Internal
                 ModMenu.ForceSimple = false;
                 ModMenu.RemovePage(page);
             }
+        }
+
+        private static void TestPreferencesPage()
+        {
+            string file = System.IO.Path.Combine(MelonLoader.Utils.MelonEnvironment.UserDataDirectory, "MelonPreferences.cfg");
+            var category = MelonLoader.MelonPreferences.CreateCategory("FruktSharedLibrarySelfTest", "Self-test settings");
+            var flag = category.CreateEntry("Flag", false, "A flag", "Bool entry.");
+            var count = category.CreateEntry("Count", 3, "Count", null, false, false, new MelonLoader.Preferences.ValueRange<int>(0, 10));
+            var ratio = category.CreateEntry("Ratio", 0.5f, "Ratio", null, false, false, new MelonLoader.Preferences.ValueRange<float>(0f, 1f));
+            var mode = category.CreateEntry("Mode", TestMode.Normal, "Mode");
+            var key = category.CreateEntry("ToggleKey", "Ctrl+K", "Toggle key");
+            category.CreateEntry("Name", "hello", "Name");
+            category.CreateEntry("Secret", 1, "Secret", null, true);
+            try
+            {
+                var page = ModMenu.AddPreferencesPage(category);
+                var kinds = string.Join(",", page.Items.ConvertAll(i => i.Kind.ToString()));
+                Check("AddPreferencesPage picks a row per entry type",
+                    kinds == "Toggle,Slider,Slider,Choice,KeyBinding,Label,Separator,Button", kinds);
+                Check("Hidden entries are left out", page.Items.TrueForAll(i => i.SafeText != "Secret"));
+                Check("Descriptions become hints", page.Items[0].Tooltip == "Bool entry.");
+
+                page.Items[0].SetBool(true);
+                page.Items[1].SetFloat(7f);
+                page.Items[2].SetFloat(0.25f);
+                page.Items[3].SetInt(2);
+                page.Items[4].SetKey(new KeyBind(Key.J, ctrl: false, shift: true, alt: false));
+                Check("Preference rows write the entries", flag.Value && count.Value == 7 && System.Math.Abs(ratio.Value - 0.25f) < 0.001f && mode.Value == TestMode.Hard,
+                    $"flag={flag.Value} count={count.Value} ratio={ratio.Value} mode={mode.Value}");
+                Check("Key rows store the key as text", KeyBind.TryParse(key.Value, out var bind) && bind.Key == Key.J && bind.Shift, key.Value);
+                Check("Preference rows read the entries", page.Items[1].GetFloat() == 7f && page.Items[3].GetInt() == 2);
+
+                page.Items[page.Items.Count - 1].OnClick();
+                Check("Reset to defaults", !flag.Value && count.Value == 3 && mode.Value == TestMode.Normal);
+                ModMenu.RemovePage(page);
+            }
+            finally
+            {
+                // The throwaway category must never be written to MelonPreferences.cfg: MelonLoader keeps saved
+                // sections in memory and writes them back on exit even after the category is removed.
+                ModMenu.ForgetUnsaved(category);
+                MelonLoader.MelonPreferences.Categories.Remove(category);
+            }
+
+            // Saving, checked on a real entry of the library's own page (and put back afterwards).
+            var library = ModMenu.Pages.Find(p => p.Title == "Library settings");
+            var debugRow = library?.Items.Find(i => i.Kind == ModMenuItemKind.Toggle && i.SafeText == "Debug logging");
+            if (debugRow == null)
+            {
+                Check("Library settings page has a Debug logging toggle", false);
+                return;
+            }
+            bool before = FruktConfig.DebugLogging;
+            debugRow.SetBool(!before);
+            ModMenu.SaveUnsaved();
+            Check("Changed preferences are saved", System.IO.File.ReadAllText(file).Contains($"DebugLogging = {(!before).ToString().ToLowerInvariant()}"));
+            debugRow.SetBool(before);
+            ModMenu.SaveUnsaved();
+            Check("Preferences restored after the save test", FruktConfig.DebugLogging == before);
         }
 
         private static IEnumerator Wait(float seconds)

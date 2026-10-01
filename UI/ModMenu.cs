@@ -14,7 +14,7 @@ namespace FruktSharedLibrary.UI
     /// <see cref="AddPage"/>; pages appear as tabs. While open the cursor is freed and the game's
     /// button input is blocked.
     /// </summary>
-    public static class ModMenu
+    public static partial class ModMenu
     {
         private const float Width = 440f;
         private const float Padding = 12f;
@@ -84,6 +84,10 @@ namespace FruktSharedLibrary.UI
             return page;
         }
 
+        /// <summary>Pages in display order: in the order they were added, the library's own settings last.</summary>
+        internal static IEnumerable<ModMenuPage> OrderedPages()
+            => Pages.Where(p => !p.ListLast).Concat(Pages.Where(p => p.ListLast));
+
         /// <summary>Removes a page.</summary>
         public static void RemovePage(ModMenuPage page) => Pages.Remove(page);
 
@@ -98,6 +102,8 @@ namespace FruktSharedLibrary.UI
 
         internal static void Initialize()
         {
+            if (FruktConfig.Category != null)
+                AddPreferencesPage(FruktConfig.Category, "Library settings").ListLast = true;
             if (!FruktConfig.PauseMenuButton)
                 return;
             var entry = PauseEntry = PauseMenu.AddButton("Mods", Open);
@@ -206,7 +212,7 @@ namespace FruktSharedLibrary.UI
 
         private static void DrawWindow()
         {
-            var visiblePages = Pages.Where(IsPageVisible).ToList();
+            var visiblePages = OrderedPages().Where(IsPageVisible).ToList();
             float height = Mathf.Min(Screen.height - 40f, 680f);
             var window = new Rect(20f, 20f, Width, height);
             GUI.DrawTexture(window, GuiStyles.Panel);
