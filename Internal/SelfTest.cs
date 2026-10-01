@@ -60,6 +60,7 @@ namespace FruktSharedLibrary.Internal
             _probe = UiProbe.Requested(flag);
             FruktLog.ForceDebug = true;
             FruktLog.Msg("[SelfTest] Enabled. The test map loads automatically from the main menu.");
+            LogUiSounds();
             GameEvents.MainMenuEntered += OnMainMenu;
             GameEvents.SandboxReady += OnSandboxReady;
             Scheduler.After(240f, () =>

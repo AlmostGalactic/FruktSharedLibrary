@@ -99,7 +99,7 @@ namespace FruktSharedLibrary.UI
             _openedAt = Time.unscaledTime;
             _canvas.gameObject.SetActive(true);
             _group.alpha = 0f;
-            Sounds.Play(UISFXType.WindowOpenClose, 0.6f);
+            PlayWindowSound();
             Update();
             return true;
         }
@@ -113,8 +113,11 @@ namespace FruktSharedLibrary.UI
             _dragging = null;
             if (_canvas != null)
                 _canvas.gameObject.SetActive(false);
-            Sounds.Play(UISFXType.WindowOpenClose, 0.6f);
+            PlayWindowSound();
         }
+
+        // The clip is a two-second run of ticks; the game only plays its start while a screen wipes.
+        private static void PlayWindowSound() => Sounds.PlayFor(UISFXType.WindowOpenClose, 0.3f, 0.6f);
 
         /// <summary>Esc behaviour: cancel key capture, leave a page, or close.</summary>
         internal static void Back()

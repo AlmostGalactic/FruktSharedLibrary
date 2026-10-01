@@ -25,7 +25,8 @@ namespace FruktSharedLibrary.Gameplay
 
         /// <summary>
         /// Game time scale (1 = normal, 0.25 = the game's slow motion). Uses the game's time-scale service so
-        /// audio pitch follows. While paused the game keeps time at 0 and restores its own value on resume.
+        /// audio pitch follows. While paused, this reads and sets the speed the game resumes at (the real time
+        /// scale stays 0 until the game unpauses).
         /// </summary>
         public static float TimeScale
         {

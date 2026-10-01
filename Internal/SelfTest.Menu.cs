@@ -56,6 +56,7 @@ namespace FruktSharedLibrary.Internal
             {
                 Section("Mod menu open", () =>
                 {
+                    WatchSounds("ModMenu.Open() from gameplay");
                     ModMenu.Open();
                     Check("ModMenu.Open() shows the native menu", ModMenu.IsNative, $"fonts={FruktTheme.Available} failed={NativeModMenu.Failed}");
                 });
@@ -63,6 +64,8 @@ namespace FruktSharedLibrary.Internal
                     yield break;
                 yield return Wait(1f);
                 Check("Native menu lists the pages", NativeModMenu.RowCount >= 2, NativeModMenu.RowCount + " rows");
+                Check("The open sound is cut short like the game's (not its full 2 s)",
+                    !Gameplay.Sounds.IsPlaying(Il2CppInfrastructure.Project.AssetsHandlers.SFX.UISFXType.WindowOpenClose));
                 Shot("menu-root");
                 yield return Wait(1.5f);
 
@@ -138,8 +141,14 @@ namespace FruktSharedLibrary.Internal
                 var example = ModMenu.LibraryMods.FirstOrDefault(m => m.Info.Name == "ExampleMod");
                 if (example == null)
                 {
-                    Check("MODS says when no mod uses the library", modsPage.Items.Count == 1 && modsPage.Items[0].SafeText.StartsWith("No installed mod"),
-                        "ExampleMod not installed; " + modsPage.Items.Count + " items");
+                    var mods = ModMenu.LibraryMods;
+                    if (mods.Count == 0)
+                        Check("MODS says when no mod uses the library", modsPage.Items.Count == 1 && modsPage.Items[0].SafeText.StartsWith("No installed mod"),
+                            modsPage.Items.Count + " items");
+                    else
+                        Check("MODS lists every mod that uses the library",
+                            modsPage.Items.FindAll(i => i.Kind == ModMenuItemKind.Link).Count == mods.Count,
+                            string.Join(", ", mods.Select(m => m.Info.Name)));
                 }
                 else
                 {
@@ -196,6 +205,7 @@ namespace FruktSharedLibrary.Internal
                     yield return Wait(1.5f);
                     if (ModMenu.PauseEntry.Button != null)
                     {
+                        WatchSounds("pause-menu line click", 3f);
                         Click("pause-button", ModMenu.PauseEntry.Button.GetComponent<RectTransform>(), 0.3f);
                         yield return Wait(1.2f);
                         Check("Clicking the pause menu line opens the mod menu", ModMenu.IsNative);
@@ -209,6 +219,26 @@ namespace FruktSharedLibrary.Internal
                     yield return Wait(1f);
                     Check("A time scale set while paused applies on resume", Mathf.Abs(Time.timeScale - 0.5f) < 0.01f, Time.timeScale.ToString("0.###"));
                     Gameplay.World.TimeScale = 1f;
+                }
+
+                // Open and close with the real configured key, from normal play (cursor locked), like a player.
+                int vk = VirtualKey(ModMenu.ToggleKey);
+                if (vk == 0)
+                {
+                    Check("Menu key can be pressed by the test", false, ModMenu.ToggleKey.ToString());
+                }
+                else
+                {
+                    WatchSounds($"{ModMenu.ToggleKey} open", 3f);
+                    PressKey("menukey-open", vk);
+                    yield return Wait(2f);
+                    Check($"{ModMenu.ToggleKey} opens the mod menu", ModMenu.IsOpen);
+                    Shot("menu-from-key");
+                    yield return Wait(1.5f);
+                    WatchSounds($"{ModMenu.ToggleKey} close", 3f);
+                    PressKey("menukey-close", vk);
+                    yield return Wait(2f);
+                    Check($"{ModMenu.ToggleKey} closes the mod menu", !ModMenu.IsOpen);
                 }
 
                 ModMenu.ForceSimple = true;
@@ -309,6 +339,60 @@ namespace FruktSharedLibrary.Internal
             debugRow.SetBool(before);
             ModMenu.SaveUnsaved();
             Check("Preferences restored after the save test", FruktConfig.DebugLogging == before);
+        }
+
+        private static float _soundWatchUntil;
+        private static readonly System.Collections.Generic.Dictionary<int, float> SoundsSeen = new();
+
+        /// <summary>
+        /// Self-test diagnostics: for the next few seconds, logs every audio source that starts playing (clip name
+        /// and frame). Polls instead of hooking, so it can't disturb the game's audio code.
+        /// </summary>
+        private static void WatchSounds(string label, float seconds = 2f)
+        {
+            FruktLog.Msg($"[sfx] watching: {label}");
+            if (_soundWatchUntil <= 0f)
+                GameEvents.Update += PollSounds;
+            _soundWatchUntil = Time.realtimeSinceStartup + seconds;
+        }
+
+        private static void LogUiSounds()
+        {
+        }
+
+        private static void PollSounds()
+        {
+            if (Time.realtimeSinceStartup > _soundWatchUntil)
+                return;
+            foreach (var source in GameServices.FindObjects<AudioSource>())
+            {
+                if (source == null || !source.isPlaying)
+                    continue;
+                int id = source.GetInstanceID();
+                float time = source.time;
+                // A source counts as newly started when it plays from (near) the beginning again.
+                if (SoundsSeen.TryGetValue(id, out float last) && time >= last)
+                {
+                    SoundsSeen[id] = time;
+                    continue;
+                }
+                SoundsSeen[id] = time;
+                string clip = source.clip != null ? $"{source.clip.name} ({source.clip.length:0.00}s)" : source.resource != null ? $"{source.resource.name} [{source.resource.GetIl2CppType().Name}]" : "?";
+                FruktLog.Msg($"[sfx] {clip} on '{source.gameObject.name}' frame {Time.frameCount} vol {source.volume:0.00}");
+            }
+        }
+
+        /// <summary>Windows virtual-key code for a bind without modifiers (0 when the test can't press it).</summary>
+        private static int VirtualKey(KeyBind bind)
+        {
+            if (bind == null || bind.Ctrl || bind.Shift || bind.Alt)
+                return 0;
+            var key = bind.Key;
+            if (key >= Key.F1 && key <= Key.F12)
+                return 0x70 + (key - Key.F1);
+            if (key >= Key.A && key <= Key.Z)
+                return 0x41 + (key - Key.A);
+            return key switch { Key.Insert => 0x2D, Key.Home => 0x24, Key.End => 0x23, Key.Backquote => 0xC0, _ => 0 };
         }
 
         private static IEnumerator Wait(float seconds)
