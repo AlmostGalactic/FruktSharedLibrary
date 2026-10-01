@@ -50,6 +50,8 @@ namespace FruktSharedLibrary.Internal
             Patch(typeof(NPCSpawnerContextMenuActionsHandler), nameof(NPCSpawnerContextMenuActionsHandler.InitializeContextActions), Type.EmptyTypes, postfix: nameof(SpawnerMenu));
             Patch(typeof(SpinnerContextMenuActionsHandler), nameof(SpinnerContextMenuActionsHandler.InitializeContextActions), Type.EmptyTypes, postfix: nameof(SpinnerMenu));
             Patch(typeof(DeleteCreatureContextMenuAction), nameof(DeleteCreatureContextMenuAction.ExecuteLogic), Type.EmptyTypes, prefix: nameof(CarrierExecute));
+            // Every menu click; lets drop-down groups and toggles act without closing the menu.
+            Patch(typeof(Il2CppPlayer.ContextMenu.Actions.ContextMenuAction), nameof(Il2CppPlayer.ContextMenu.Actions.ContextMenuAction.Execute), Type.EmptyTypes, prefix: nameof(MenuActionExecute));
 
             // Esc belongs to the mod menu while it is open (the pause button ignores the input block).
             Patch(typeof(PauseToggleButton), "OnPressInternal", Type.EmptyTypes, prefix: nameof(PauseButtonPressed));
@@ -143,6 +145,21 @@ namespace FruktSharedLibrary.Internal
             catch (Exception e)
             {
                 FruktLog.Error("Custom context menu dispatch failed", e);
+                return true;
+            }
+        }
+
+        private static bool MenuActionExecute(Il2CppPlayer.ContextMenu.Actions.ContextMenuAction __instance)
+        {
+            if (!Expect<Il2CppPlayer.ContextMenu.Actions.ContextMenuAction>(__instance, nameof(MenuActionExecute)))
+                return true;
+            try
+            {
+                return ContextMenuCarrier.ActionExecutePrefix(__instance);
+            }
+            catch (Exception e)
+            {
+                FruktLog.Error("Context menu click dispatch failed", e);
                 return true;
             }
         }

@@ -103,6 +103,14 @@ public class ExampleMod : MelonMod
         ContextMenus.AddCreatureAction("Launch", creature => creature.AddForce(Vector3.up * 800f));
         ContextMenus.AddLimbAction("Pop", limb => limb.Damage(limb.transform.position, 6));
 
+        // A drop-down group in the right-click menu, with a nested group inside
+        var example = ContextMenus.AddCreatureGroup("Example")
+            .AddCreatureAction("Kill", creature => creature.Kill())
+            .AddToggle("Walking", ctx => ctx.Creature.IsWalking(), (ctx, on) => ctx.Creature.SetWalking(on));
+        example.AddGroup("Throw")
+            .AddCreatureAction("Up", creature => creature.AddForce(Vector3.up * 800f))
+            .AddCreatureAction("Away", creature => creature.AddForce(LocalPlayer.Forward * 800f));
+
         // A page in the shared mod menu (F8, or MODS in the pause menu)
         ModMenu.AddPage("Example")
             .Header("Fun")
@@ -177,7 +185,7 @@ variants, `GetRegisteredPrefabIds()`, `GetPrefabIds<T>()`, `GetPropNames()`, `Ge
 ### `FruktSharedLibrary.UI`
 | Type | What it does |
 |------|--------------|
-| `ContextMenus` | Adds actions to the game's own right-click menus: `AddCreatureAction`, `AddLimbAction`, `AddAction(ContextMenuTarget, ...)` for props, firearms, the human spawner and spinners, and `AddToggle` (label shows ON/OFF). Actions can be added or removed at any time, including for objects that already exist. Priority: higher numbers are listed first (built-in actions use 995-1000). |
+| `ContextMenus` | Adds actions to the game's own right-click menus: `AddCreatureAction`, `AddLimbAction`, `AddAction(ContextMenuTarget, ...)` for props, firearms, the human spawner and spinners, and `AddToggle` (label shows ON/OFF; clicking keeps the menu open, like the game's switches). `AddGroup` / `AddCreatureGroup` add a drop-down line ("+ My Mod") that expands in place to show its own actions, toggles and nested groups, indented, and collapses again when the menu closes. Actions and groups can be added or removed at any time, including for objects that already exist. Priority: higher numbers are listed first (built-in actions use 995-1000). |
 | `ModMenu` | The shared mod menu, drawn in the game's own style. Pages you add appear under MODS, in your mod's entry next to its version and author (one page is shown inline; several are listed). `AddPage(title)` returns a builder with `Header`, `Label` (fixed or live text), `Button`, `Toggle`, `Slider` (float or int), `Choice` (list of words or any enum), `KeyBinding` (click, then press a key), `Separator`, `AddSubPage(title)` (returns a nested page), plus `OnlyWhen(condition)` and `WithTooltip(text)` for the item just added. `LibraryMods` lists the installed mods that use the library. `Open`/`Close`/`IsOpen`/`OpenChanged`. `AddPreferencesPage(category)` turns a MelonPreferences category into a settings page automatically (bool → toggle, ranged number → slider, enum → choice, "...Key" string → key binding, descriptions → hints) and saves changes to MelonPreferences.cfg. |
 | `PauseMenu` | `AddButton(label, onClick)` adds a real copy of the game's pause-menu line (same font, hover and animation). The returned entry has `SetLabel` and `VisibleWhen`. |
 | `Notifications` | `Show(text, seconds)`, `Show(text, color)`, `Warn(text)`: plates in the top-right corner, styled like the game. |

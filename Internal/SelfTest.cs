@@ -311,6 +311,23 @@ namespace FruktSharedLibrary.Internal
                 ContextMenus.RemoveAll();
             });
             for (float end = Now() + 0.5f; Now() < end;) yield return null;
+            var groupTest = TestContextMenuGroups(head);
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = groupTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Context menu group test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return groupTest.Current;
+            }
 
             // ---------------------------------------------------- damage
             float wholenessBefore = 0f;

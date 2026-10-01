@@ -58,7 +58,7 @@ namespace FruktSharedLibrary.UI
         public GameObject GameObject => Handler.Exists() ? Handler.gameObject : null;
     }
 
-    /// <summary>A registered context-menu action. Call <see cref="Remove"/> to stop adding it to new menus.</summary>
+    /// <summary>A registered context-menu action or group. Call <see cref="Remove"/> to take it out of every menu.</summary>
     public sealed class ContextMenuEntry
     {
         internal ContextMenuTarget Target;
@@ -67,15 +67,122 @@ namespace FruktSharedLibrary.UI
         internal Func<ContextMenuContext, bool> ShowIf;
         internal int Priority;
         internal bool Removed;
+        internal bool IsGroup;
+        internal bool KeepOpen;
+        internal ContextMenuEntry Parent;
+        internal readonly List<ContextMenuEntry> Children = new();
+        internal int Order;
 
-        /// <summary>Removes the action from every menu, including menus that were already built.</summary>
+        internal int Depth => Parent == null ? 0 : Parent.Depth + 1;
+
+        /// <summary>Removes the action (or group with everything in it) from every menu, including menus that were already built.</summary>
         public void Remove()
         {
             if (Removed)
                 return;
-            Removed = true;
-            ContextMenus.Entries.Remove(this);
+            MarkRemoved(this);
+            if (Parent != null)
+                Parent.Children.Remove(this);
+            else
+                ContextMenus.Entries.Remove(this);
             Internal.ContextMenuCarrier.OnEntryRemoved(this);
+        }
+
+        private static void MarkRemoved(ContextMenuEntry entry)
+        {
+            entry.Removed = true;
+            foreach (var child in entry.Children)
+                MarkRemoved(child);
+        }
+    }
+
+    /// <summary>
+    /// A drop-down group in a context menu: one line ("+ My Mod") that expands in place to show the actions inside
+    /// it, indented, and collapses again when clicked or when the menu closes. Groups can contain groups.
+    /// Every Add method returns the group itself so calls can be chained, except <see cref="AddGroup"/>, which
+    /// returns the new nested group.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// var tools = ContextMenus.AddCreatureGroup("My Mod")
+    ///     .AddCreatureAction("Heal", c => c.Heal())
+    ///     .AddToggle("Frozen", ctx => IsFrozen(ctx.Creature), (ctx, on) => SetFrozen(ctx.Creature, on));
+    /// tools.AddGroup("Launch")
+    ///     .AddCreatureAction("Up", c => c.AddForce(Vector3.up * 600f))
+    ///     .AddCreatureAction("Forward", c => c.AddForce(LocalPlayer.Forward * 600f));
+    /// </code>
+    /// </example>
+    public sealed class ContextMenuGroup
+    {
+        internal ContextMenuGroup(ContextMenuEntry entry) => Entry = entry;
+
+        /// <summary>The group's own entry (remove it to remove the whole group).</summary>
+        public ContextMenuEntry Entry { get; }
+
+        /// <summary>Which kind of object's menu the group is in.</summary>
+        public ContextMenuTarget Target => Entry.Target;
+
+        /// <summary>Adds an action inside the group. Clicking it runs <paramref name="onClick"/> and closes the menu.</summary>
+        public ContextMenuGroup AddAction(string label, Action<ContextMenuContext> onClick, Func<ContextMenuContext, bool> showIf = null)
+            => AddAction(_ => label, onClick, showIf);
+
+        /// <summary>Adds an action whose label is computed when the menu is built.</summary>
+        public ContextMenuGroup AddAction(Func<ContextMenuContext, string> label, Action<ContextMenuContext> onClick, Func<ContextMenuContext, bool> showIf = null)
+        {
+            ContextMenus.AddChild(Entry, label, onClick ?? throw new ArgumentNullException(nameof(onClick)), showIf, group: false, keepOpen: false);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an on/off line inside the group ("Label: ON"). Clicking it flips the state and keeps the menu open,
+        /// like the game's own switches.
+        /// </summary>
+        public ContextMenuGroup AddToggle(string label, Func<ContextMenuContext, bool> getState, Action<ContextMenuContext, bool> setState,
+            Func<ContextMenuContext, bool> showIf = null)
+        {
+            if (getState == null)
+                throw new ArgumentNullException(nameof(getState));
+            if (setState == null)
+                throw new ArgumentNullException(nameof(setState));
+            ContextMenus.AddChild(Entry, ctx => ContextMenus.ToggleLabel(label, getState, ctx), ctx => setState(ctx, !getState(ctx)), showIf,
+                group: false, keepOpen: true);
+            return this;
+        }
+
+        /// <summary>Adds an action for the creature (only in groups on <see cref="ContextMenuTarget.Limb"/> menus).</summary>
+        public ContextMenuGroup AddCreatureAction(string label, Action<AbstractCreature> onClick, Func<AbstractCreature, bool> showIf = null)
+        {
+            RequireLimbTarget();
+            if (onClick == null)
+                throw new ArgumentNullException(nameof(onClick));
+            return AddAction(label, ctx => { var creature = ctx.Creature; if (creature.IsValid()) onClick(creature); },
+                ctx => ctx.Creature.IsValid() && (showIf == null || showIf(ctx.Creature)));
+        }
+
+        /// <summary>Adds an action for the right-clicked limb (only in groups on <see cref="ContextMenuTarget.Limb"/> menus).</summary>
+        public ContextMenuGroup AddLimbAction(string label, Action<AbstractLimb> onClick, Func<AbstractLimb, bool> showIf = null)
+        {
+            RequireLimbTarget();
+            if (onClick == null)
+                throw new ArgumentNullException(nameof(onClick));
+            return AddAction(label, ctx => onClick(ctx.Limb), showIf == null ? null : ctx => showIf(ctx.Limb));
+        }
+
+        /// <summary>Adds a nested group inside this one and returns it.</summary>
+        public ContextMenuGroup AddGroup(string label, Func<ContextMenuContext, bool> showIf = null)
+        {
+            if (label == null)
+                throw new ArgumentNullException(nameof(label));
+            return new ContextMenuGroup(ContextMenus.AddChild(Entry, _ => label, null, showIf, group: true, keepOpen: true));
+        }
+
+        /// <summary>Removes the group and everything in it from every menu.</summary>
+        public void Remove() => Entry.Remove();
+
+        private void RequireLimbTarget()
+        {
+            if (Target != ContextMenuTarget.Limb)
+                throw new InvalidOperationException("Creature and limb actions only work in groups on ContextMenuTarget.Limb menus.");
         }
     }
 
@@ -90,6 +197,11 @@ namespace FruktSharedLibrary.UI
     /// ContextMenus.AddToggle(ContextMenuTarget.Limb, "Frozen",
     ///     ctx => frozen.Contains(ctx.Creature.Pointer),
     ///     (ctx, on) => { ctx.Creature.SetFrozen(on); ... });
+    ///
+    /// // A drop-down group with its own actions (see ContextMenuGroup)
+    /// ContextMenus.AddCreatureGroup("My Mod")
+    ///     .AddCreatureAction("Heal", c => c.Heal())
+    ///     .AddCreatureAction("Kill", c => c.Kill());
     /// </code>
     /// </example>
     public static class ContextMenus
@@ -123,18 +235,74 @@ namespace FruktSharedLibrary.UI
                 throw new ArgumentNullException(nameof(label));
             if (onClick == null)
                 throw new ArgumentNullException(nameof(onClick));
-            var entry = new ContextMenuEntry
+            return AddTopLevel(new ContextMenuEntry
             {
                 Target = target,
                 Label = label,
                 OnClick = onClick,
                 ShowIf = showIf,
                 Priority = priority,
-            };
+            });
+        }
+
+        /// <summary>
+        /// Adds a drop-down group: a line that expands in place to show the actions you put in it. Fill it with
+        /// the returned <see cref="ContextMenuGroup"/>.
+        /// </summary>
+        public static ContextMenuGroup AddGroup(ContextMenuTarget target, string label, Func<ContextMenuContext, bool> showIf = null,
+            int priority = DefaultPriority)
+        {
+            if (label == null)
+                throw new ArgumentNullException(nameof(label));
+            return new ContextMenuGroup(AddTopLevel(new ContextMenuEntry
+            {
+                Target = target,
+                Label = _ => label,
+                ShowIf = showIf,
+                Priority = priority,
+                IsGroup = true,
+                KeepOpen = true,
+            }));
+        }
+
+        /// <summary>Adds a drop-down group to every creature's menu (shown when right-clicking any of its limbs).</summary>
+        public static ContextMenuGroup AddCreatureGroup(string label, Func<AbstractCreature, bool> showIf = null, int priority = DefaultPriority)
+            => AddGroup(ContextMenuTarget.Limb, label, ctx => ctx.Creature.IsValid() && (showIf == null || showIf(ctx.Creature)), priority);
+
+        private static int _order;
+
+        private static ContextMenuEntry AddTopLevel(ContextMenuEntry entry)
+        {
+            entry.Order = _order++;
             Entries.Add(entry);
             Internal.ContextMenuCarrier.OnEntryAdded(entry);
             return entry;
         }
+
+        internal static ContextMenuEntry AddChild(ContextMenuEntry parent, Func<ContextMenuContext, string> label, Action<ContextMenuContext> onClick,
+            Func<ContextMenuContext, bool> showIf, bool group, bool keepOpen)
+        {
+            if (parent.Removed)
+                throw new InvalidOperationException("The group was removed.");
+            var entry = new ContextMenuEntry
+            {
+                Target = parent.Target,
+                Label = label ?? throw new ArgumentNullException(nameof(label)),
+                OnClick = onClick,
+                ShowIf = showIf,
+                Priority = parent.Priority,
+                IsGroup = group,
+                KeepOpen = keepOpen,
+                Parent = parent,
+                Order = _order++,
+            };
+            parent.Children.Add(entry);
+            Internal.ContextMenuCarrier.OnEntryAdded(entry);
+            return entry;
+        }
+
+        internal static string ToggleLabel(string label, Func<ContextMenuContext, bool> getState, ContextMenuContext ctx)
+            => $"{label}: {(getState(ctx) ? "ON" : "OFF")}";
 
         /// <summary>Adds an action to every limb's menu.</summary>
         public static ContextMenuEntry AddLimbAction(string label, Action<AbstractLimb> onClick,
@@ -150,7 +318,8 @@ namespace FruktSharedLibrary.UI
                 ctx => ctx.Creature.IsValid() && (showIf == null || showIf(ctx.Creature)), priority);
 
         /// <summary>
-        /// Adds an on/off action. Its label shows the current state ("Label: ON") and clicking it flips the state.
+        /// Adds an on/off action. Its label shows the current state ("Label: ON"); clicking it flips the state and
+        /// keeps the menu open, like the game's own switches.
         /// </summary>
         public static ContextMenuEntry AddToggle(ContextMenuTarget target, string label,
             Func<ContextMenuContext, bool> getState, Action<ContextMenuContext, bool> setState,
@@ -160,8 +329,9 @@ namespace FruktSharedLibrary.UI
                 throw new ArgumentNullException(nameof(getState));
             if (setState == null)
                 throw new ArgumentNullException(nameof(setState));
-            return AddAction(target, ctx => $"{label}: {(getState(ctx) ? "ON" : "OFF")}",
-                ctx => setState(ctx, !getState(ctx)), showIf, priority);
+            var entry = AddAction(target, ctx => ToggleLabel(label, getState, ctx), ctx => setState(ctx, !getState(ctx)), showIf, priority);
+            entry.KeepOpen = true;
+            return entry;
         }
 
         /// <summary>Removes every action that was added by any mod.</summary>
