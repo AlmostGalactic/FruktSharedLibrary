@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>FruktSharedLibrary</RootNamespace>
@@ -55,6 +55,8 @@
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Unity.TextMeshPro.dll" Private="false" />
   </ItemGroup>
 
   <ItemGroup>

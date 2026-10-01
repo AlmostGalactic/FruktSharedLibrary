@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -46,6 +46,7 @@ namespace FruktSharedLibrary.Internal
         private static int _failed;
         private static int _stage;
         private static bool _quit;
+        private static bool _probe;
 
         private static string FlagPath => Path.Combine(MelonEnvironment.UserDataDirectory, "FruktSharedLibrary.selftest");
         private static string LogPath => Path.Combine(MelonEnvironment.UserDataDirectory, "FruktSharedLibrary.selftest.log");
@@ -54,7 +55,9 @@ namespace FruktSharedLibrary.Internal
         {
             if (!File.Exists(FlagPath))
                 return;
-            _quit = File.ReadAllText(FlagPath).IndexOf("quit", StringComparison.OrdinalIgnoreCase) >= 0;
+            var flag = File.ReadAllText(FlagPath);
+            _quit = flag.IndexOf("quit", StringComparison.OrdinalIgnoreCase) >= 0;
+            _probe = UiProbe.Requested(flag);
             FruktLog.ForceDebug = true;
             FruktLog.Msg("[SelfTest] Enabled. The test map loads automatically from the main menu.");
             GameEvents.MainMenuEntered += OnMainMenu;
@@ -91,6 +94,12 @@ namespace FruktSharedLibrary.Internal
                 return;
             _stage = 2;
             Check("SandboxReady event", true, map.ToString());
+            if (_probe)
+            {
+                _stage = 3;
+                Scheduler.StartCoroutine(UiProbe.Run(_quit));
+                return;
+            }
             Scheduler.StartCoroutine(Run());
         }
 

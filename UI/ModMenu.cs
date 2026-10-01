@@ -20,7 +20,8 @@ namespace FruktSharedLibrary.UI
         private const float Padding = 12f;
         private const float TabHeight = 26f;
 
-        private static readonly List<ModMenuPage> Pages = new();
+        internal static readonly List<ModMenuPage> Pages = new();
+        private static bool _native;
         private static Il2CppSystem.Object _cursorOwner;
         private static int _selected;
         private static float _scroll;
@@ -79,6 +80,17 @@ namespace FruktSharedLibrary.UI
 
         internal static void Update()
         {
+            if (_native && NativeModMenu.Failed)
+                _native = false;
+            if (_native)
+            {
+                if (!NativeModMenu.CapturingKey && FruktInput.GetKeyDown(Key.Escape))
+                    NativeModMenu.Back();
+                NativeModMenu.Update();
+                if (!NativeModMenu.CapturingKey && ToggleKey.WasPressed())
+                    Close();
+                return;
+            }
             if (ToggleKey.WasPressed())
                 Toggle();
             if (IsOpen && FruktInput.GetKeyDown(Key.Escape))
@@ -98,9 +110,16 @@ namespace FruktSharedLibrary.UI
             IsOpen = open;
             _cursorOwner ??= new Il2CppSystem.Object();
             if (open)
+            {
                 LocalPlayer.CaptureCursor(_cursorOwner);
+                _native = FruktConfig.NativeStyle && NativeModMenu.Open(GameState.InSandbox ? "pause" : "frukt");
+            }
             else
+            {
                 LocalPlayer.ReleaseCursor(_cursorOwner);
+                NativeModMenu.Close();
+                _native = false;
+            }
 
             var handlers = OpenChanged;
             if (handlers == null)
@@ -116,7 +135,7 @@ namespace FruktSharedLibrary.UI
 
         internal static void Draw()
         {
-            if (!IsOpen || _drawFailed)
+            if (!IsOpen || _drawFailed || _native)
                 return;
             try
             {
@@ -201,7 +220,8 @@ namespace FruktSharedLibrary.UI
             {
                 if (!item.IsVisible)
                     continue;
-                var rect = new Rect(0f, y, width, item.Height);
+                float itemHeight = item.Kind switch { ModMenuItemKind.Slider => 44f, ModMenuItemKind.Button => 30f, ModMenuItemKind.Separator => 10f, ModMenuItemKind.Label => 22f, _ => 26f };
+                var rect = new Rect(0f, y, width, itemHeight);
                 try
                 {
                     DrawItem(item, rect);
@@ -210,7 +230,7 @@ namespace FruktSharedLibrary.UI
                 {
                     GUI.Label(rect, $"<color=#ff7070>error: {e.Message}</color>", GuiStyles.Label);
                 }
-                y += item.Height + 4f;
+                y += itemHeight + 4f;
             }
             return y - startY;
         }

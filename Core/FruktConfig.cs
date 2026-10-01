@@ -13,6 +13,7 @@ namespace FruktSharedLibrary.Core
         private static MelonPreferences_Entry<string> _modMenuKey;
         private static MelonPreferences_Entry<bool> _showNotifications;
         private static MelonPreferences_Entry<bool> _builtInMenuPage;
+        private static MelonPreferences_Entry<bool> _nativeStyle;
 
         internal static void Initialize()
         {
@@ -23,6 +24,8 @@ namespace FruktSharedLibrary.Core
                 "Key that opens the mod menu. Examples: F8, Insert, Ctrl+M.");
             _showNotifications = _category.CreateEntry("ShowNotifications", true, "Show notifications",
                 "Show on-screen notifications posted by mods.");
+            _nativeStyle = _category.CreateEntry("NativeStyle", true, "Native-style menu",
+                "Draw the mod menu in FRUKT's own style (falls back to a simple menu if that fails).");
             _builtInMenuPage = _category.CreateEntry("BuiltInMenuPage", true, "Built-in sandbox tools page",
                 "Adds the library's own sandbox tools page to the mod menu.");
         }
@@ -46,5 +49,7 @@ namespace FruktSharedLibrary.Core
         }
 
         public static bool BuiltInMenuPage => _builtInMenuPage?.Value ?? true;
+
+        public static bool NativeStyle => _nativeStyle?.Value ?? true;
     }
 }
