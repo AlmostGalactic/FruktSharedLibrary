@@ -23,7 +23,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
 
 1. Install [MelonLoader](https://melonwiki.xyz/) 0.7 or newer for FRUKT.
 2. Download `FruktSharedLibrary.dll` from the
-   [latest release](https://github.com/AlmostGalactic/FruktSharedLibrary/releases/latest) and put it in
+   [releases page](https://github.com/AlmostGalactic/FruktSharedLibrary/releases) and put it in
    `FRUKT/Mods`.
 
 Mods that use the library need it installed. To open the mod menu, press F8 in a map or pick MODS in the pause
