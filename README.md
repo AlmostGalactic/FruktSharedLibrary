@@ -16,9 +16,14 @@ against the live game by an automated in-game self-test (115/115 checks).
 Copy `FruktSharedLibrary.dll` into `FRUKT/Mods`. Mods that depend on it need it installed.
 
 In a map, press **F8** or pick **MODS** in the pause menu to open the mod menu. It looks like the game's
-own settings screens, and every mod that uses the library can add a page to it. It includes a *Sandbox Tools*
-page with time scale, gravity, spawning, and actions for the creature under your crosshair. When FruitLib is
-also installed, its pause-menu line is already called MODS, so the library's line is called **MOD MENU**.
+own settings screens. When FruitLib is also installed, its pause-menu line is already called MODS, so the
+library's line is called **MOD MENU**. The menu has:
+
+- **Mods**: every installed mod that uses the library, with its version, author and settings.
+- **Sandbox Tools**: only things the base game can't already do. That's any game speed (the game's slow
+  motion is one fixed speed) and heal / kill / launch / explode for the creature under your crosshair. Gravity,
+  map reset, deleting bodies and spawning are already in the game's terminal (**I**), so they aren't repeated.
+- **Library settings**: the settings below, plus a few developer tools.
 
 These settings are on the menu's *Library settings* page, or in `UserData/MelonPreferences.cfg` under
 `[FruktSharedLibrary]`:
@@ -146,7 +151,7 @@ All APIs are static classes or extension methods. Gameplay APIs need a loaded ma
 ### `FruktSharedLibrary.Gameplay`
 | Type | What it does |
 |------|--------------|
-| `World` | `TimeScale`, `Pause()`/`Resume()`/`IsPaused`, `Gravity`/`GravityStrength`/`SetGravity`/`ResetGravity`, `ResetMap`, `DeleteAllCreatures`, `DeleteBodies`, `KillCount`, `Maps`, `GetMapDisplayName`, `LoadMap`, `ReturnToMainMenu`, `Quit`. |
+| `World` | `TimeScale` (works while paused: it sets the speed the game resumes at), `Pause()`/`Resume()`/`IsPaused`, `Gravity`/`GravityStrength`/`SetGravity`/`ResetGravity`, `ResetMap`, `DeleteAllCreatures`, `DeleteBodies`, `KillCount`, `Maps`, `GetMapDisplayName`, `LoadMap`, `ReturnToMainMenu`, `Quit`. |
 | `LocalPlayer` | `Position`, `Camera`, `CameraPosition`/`CameraRotation`/`Forward`, `AimRay`, `Raycast`, `TryGetAimPoint`, `GetPointInFront`, `Teleport`, `ResetToStart`, `FieldOfView`, `SetFlightMode`, `ShakeCamera`, `HeldObject`, `Pin`/`Unpin`, `CaptureCursor`/`ReleaseCursor` (for your own menus). |
 | `Sounds` | Plays the game's own SFX: `Sounds.Play(UISFXType.SwitchOn)`, `Sounds.Play(WeaponSFXType.Shoot762, position)`. |
 
@@ -173,7 +178,7 @@ variants, `GetRegisteredPrefabIds()`, `GetPrefabIds<T>()`, `GetPropNames()`, `Ge
 | Type | What it does |
 |------|--------------|
 | `ContextMenus` | Adds actions to the game's own right-click menus: `AddCreatureAction`, `AddLimbAction`, `AddAction(ContextMenuTarget, ...)` for props, firearms, the human spawner and spinners, and `AddToggle` (label shows ON/OFF). Actions can be added or removed at any time, including for objects that already exist. Priority: higher numbers are listed first (built-in actions use 995-1000). |
-| `ModMenu` | The shared mod menu, drawn in the game's own style. `AddPage(title)` returns a builder with `Header`, `Label` (fixed or live text), `Button`, `Toggle`, `Slider` (float or int), `Choice` (list of words or any enum), `KeyBinding` (click, then press a key), `Separator`, plus `OnlyWhen(condition)` and `WithTooltip(text)` for the item just added. `Open`/`Close`/`IsOpen`/`OpenChanged`. `AddPreferencesPage(category)` turns a MelonPreferences category into a settings page automatically (bool → toggle, ranged number → slider, enum → choice, "...Key" string → key binding, descriptions → hints) and saves changes to MelonPreferences.cfg. |
+| `ModMenu` | The shared mod menu, drawn in the game's own style. Pages you add appear under MODS, in your mod's entry next to its version and author (one page is shown inline; several are listed). `AddPage(title)` returns a builder with `Header`, `Label` (fixed or live text), `Button`, `Toggle`, `Slider` (float or int), `Choice` (list of words or any enum), `KeyBinding` (click, then press a key), `Separator`, `AddSubPage(title)` (returns a nested page), plus `OnlyWhen(condition)` and `WithTooltip(text)` for the item just added. `LibraryMods` lists the installed mods that use the library. `Open`/`Close`/`IsOpen`/`OpenChanged`. `AddPreferencesPage(category)` turns a MelonPreferences category into a settings page automatically (bool → toggle, ranged number → slider, enum → choice, "...Key" string → key binding, descriptions → hints) and saves changes to MelonPreferences.cfg. |
 | `PauseMenu` | `AddButton(label, onClick)` adds a real copy of the game's pause-menu line (same font, hover and animation). The returned entry has `SetLabel` and `VisibleWhen`. |
 | `Notifications` | `Show(text, seconds)`, `Show(text, color)`, `Warn(text)`: plates in the top-right corner, styled like the game. |
 | `FruktTheme` | The game's palette (`Background`, `Text`, `Muted`, `Dim`, `Line`, `Accent`, `Frame`), fonts (`DisplayFont` = GNF, `MonoFont` = Departure Mono) and `BorderSprite`. |

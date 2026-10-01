@@ -31,18 +31,35 @@ namespace FruktSharedLibrary.Gameplay
         {
             get
             {
+                // While paused the real time scale is 0; report the speed the game resumes at.
+                var paused = PausedService();
+                if (paused != null)
+                    return paused.m_timeBeforePause;
                 var service = GameServices.TryGet<ITimeScaleService>();
                 return service != null ? service.Get() : Time.timeScale;
             }
             set
             {
                 value = Mathf.Max(0f, value);
+                var paused = PausedService();
+                if (paused != null)
+                {
+                    // Applied when the game unpauses (the pause service restores this value).
+                    paused.m_timeBeforePause = value;
+                    return;
+                }
                 var service = GameServices.TryGet<ITimeScaleService>();
                 if (service != null)
                     service.Set(value);
                 else
                     Time.timeScale = value;
             }
+        }
+
+        private static Il2CppGame.PauseService PausedService()
+        {
+            var service = GameServices.TryGet<IPauseService>()?.TryCast<Il2CppGame.PauseService>();
+            return service != null && service.Paused ? service : null;
         }
 
         /// <summary>True while the pause menu is open.</summary>

@@ -10,8 +10,9 @@ using UnityEngine.InputSystem;
 namespace FruktSharedLibrary.UI
 {
     /// <summary>
-    /// A shared in-game mod menu (default key F8, configurable). Every mod can add its own page with
-    /// <see cref="AddPage"/>; pages appear as tabs. While open the cursor is freed and the game's
+    /// The shared in-game mod menu (F8 by default, or the line in the pause menu). Every mod that uses the library
+    /// is listed under MODS with its version and author; pages a mod adds with <see cref="AddPage(string)"/> or
+    /// <see cref="AddPreferencesPage"/> appear in that mod's entry. While open the cursor is freed and the game's
     /// button input is blocked.
     /// </summary>
     public static partial class ModMenu
@@ -27,6 +28,7 @@ namespace FruktSharedLibrary.UI
         private static float _scroll;
         private static float _contentHeight;
         private static ModMenuItem _capturing;
+        private static readonly List<ModMenuPage> _subPages = new();
         private static KeyBind _keyBind;
         private static string _keyBindText;
         private static bool _sliderBroken;
@@ -71,22 +73,26 @@ namespace FruktSharedLibrary.UI
             }
         }
 
-        /// <summary>Adds a page (tab) to the menu. Pages with the same title are merged.</summary>
-        public static ModMenuPage AddPage(string title)
+        /// <summary>
+        /// Adds a page for your mod. It is listed under MODS, in your mod's entry (next to its name, version and
+        /// author). Calling it again with the same title returns the same page.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static ModMenuPage AddPage(string title) => AddPage(title, System.Reflection.Assembly.GetCallingAssembly());
+
+        internal static ModMenuPage AddPage(string title, System.Reflection.Assembly caller)
         {
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Page title is empty.", nameof(title));
-            var existing = Pages.FirstOrDefault(p => p.Title == title);
+            if (caller == typeof(ModMenu).Assembly)
+                caller = null;
+            var existing = Pages.FirstOrDefault(p => p.Title == title && p.SourceAssembly == caller);
             if (existing != null)
                 return existing;
-            var page = new ModMenuPage(title);
+            var page = new ModMenuPage(title) { SourceAssembly = caller };
             Pages.Add(page);
             return page;
         }
-
-        /// <summary>Pages in display order: in the order they were added, the library's own settings last.</summary>
-        internal static IEnumerable<ModMenuPage> OrderedPages()
-            => Pages.Where(p => !p.ListLast).Concat(Pages.Where(p => p.ListLast));
 
         /// <summary>Removes a page.</summary>
         public static void RemovePage(ModMenuPage page) => Pages.Remove(page);
@@ -162,6 +168,7 @@ namespace FruktSharedLibrary.UI
                 return;
             IsOpen = open;
             _capturing = null;
+            _subPages.Clear();
             _cursorOwner ??= new Il2CppSystem.Object();
             if (open)
             {
@@ -212,7 +219,7 @@ namespace FruktSharedLibrary.UI
 
         private static void DrawWindow()
         {
-            var visiblePages = OrderedPages().Where(IsPageVisible).ToList();
+            var visiblePages = RootPages().Where(IsPageVisible).ToList();
             float height = Mathf.Min(Screen.height - 40f, 680f);
             var window = new Rect(20f, 20f, Width, height);
             GUI.DrawTexture(window, GuiStyles.Panel);
@@ -221,7 +228,7 @@ namespace FruktSharedLibrary.UI
             float x = window.x + Padding;
             float y = window.y + 8f;
             float innerWidth = Width - Padding * 2f;
-            GUI.Label(new Rect(x, y, innerWidth, 24f), "<b>MODS</b>", GuiStyles.Title);
+            GUI.Label(new Rect(x, y, innerWidth, 24f), "<b>MOD MENU</b>", GuiStyles.Title);
             GUI.Label(new Rect(x + innerWidth - 150f, y, 150f, 24f), $"<size=12>{ToggleKey} / Esc to close</size>", GuiStyles.Label);
             y += 30f;
 
@@ -235,10 +242,24 @@ namespace FruktSharedLibrary.UI
             y = DrawTabs(visiblePages, x, y, innerWidth);
             y += 6f;
 
+            // Sub-pages (a mod under MODS, or a page's AddSubPage) open inside the selected tab.
+            _subPages.RemoveAll(p => !IsPageVisible(p));
+            var current = _subPages.Count > 0 ? _subPages[_subPages.Count - 1] : visiblePages[_selected];
+            if (_subPages.Count > 0)
+            {
+                if (GUI.Button(new Rect(x, y, 90f, 24f), "< Back", GuiStyles.Button))
+                {
+                    _subPages.RemoveAt(_subPages.Count - 1);
+                    _scroll = 0f;
+                }
+                GUI.Label(new Rect(x + 100f, y, innerWidth - 100f, 24f), $"<b>{current.Title}</b>", GuiStyles.Label);
+                y += 30f;
+            }
+
             var content = new Rect(x, y, innerWidth, window.yMax - y - Padding);
             HandleScroll(content);
             GUI.BeginGroup(content);
-            _contentHeight = DrawItems(visiblePages[_selected], content.width, -_scroll);
+            _contentHeight = DrawItems(current, content.width, -_scroll);
             GUI.EndGroup();
             _scroll = Mathf.Clamp(_scroll, 0f, Mathf.Max(0f, _contentHeight - content.height));
         }
@@ -258,9 +279,10 @@ namespace FruktSharedLibrary.UI
                 var rect = new Rect(tabX, y, tabWidth, TabHeight);
                 if (i == _selected)
                     GUI.DrawTexture(new Rect(rect.x, rect.yMax - 2f, rect.width, 2f), GuiStyles.Accent);
-                if (GUI.Button(rect, i == _selected ? $"<b>{title}</b>" : title, GuiStyles.Button) && i != _selected)
+                if (GUI.Button(rect, i == _selected ? $"<b>{title}</b>" : title, GuiStyles.Button) && (i != _selected || _subPages.Count > 0))
                 {
                     _selected = i;
+                    _subPages.Clear();
                     _scroll = 0f;
                 }
                 tabX += tabWidth + 4f;
@@ -278,7 +300,7 @@ namespace FruktSharedLibrary.UI
                 float itemHeight = item.Kind switch
                 {
                     ModMenuItemKind.Slider or ModMenuItemKind.Choice => 44f,
-                    ModMenuItemKind.Button => 30f,
+                    ModMenuItemKind.Button or ModMenuItemKind.Link => 30f,
                     ModMenuItemKind.Separator => 10f,
                     ModMenuItemKind.Label => 22f,
                     _ => 26f,
@@ -321,6 +343,14 @@ namespace FruktSharedLibrary.UI
                 case ModMenuItemKind.Button:
                     if (GUI.Button(rect, item.SafeText, GuiStyles.Button))
                         Invoke(item, () => item.OnClick());
+                    break;
+
+                case ModMenuItemKind.Link:
+                    if (GUI.Button(rect, item.SafeText + "  >", GuiStyles.Button))
+                    {
+                        _subPages.Add(item.Target);
+                        _scroll = 0f;
+                    }
                     break;
 
                 case ModMenuItemKind.Toggle:

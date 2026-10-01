@@ -65,7 +65,10 @@ namespace FruktSharedLibrary.UI
         private static Image _scrollTrack;
         private static readonly List<Row> Rows = new();
 
-        private static ModMenuPage _page;
+        // Pages opened from the top level, innermost last (empty = the top-level list).
+        private static readonly List<ModMenuPage> Stack = new();
+        private static ModMenuPage _page => Stack.Count == 0 ? null : Stack[Stack.Count - 1];
+        private static int _modCount;
         private static string _origin = "frukt";
         private static string _layoutSignature;
         private static float _scroll;
@@ -85,7 +88,9 @@ namespace FruktSharedLibrary.UI
             if (!EnsureBuilt())
                 return false;
             _origin = string.IsNullOrEmpty(origin) ? "frukt" : origin;
-            _page = page;
+            Stack.Clear();
+            if (page != null)
+                Stack.Add(page);
             _scroll = 0f;
             _layoutSignature = null;
             _capturing = null;
@@ -121,7 +126,7 @@ namespace FruktSharedLibrary.UI
             }
             if (_page != null)
             {
-                _page = null;
+                Stack.RemoveAt(Stack.Count - 1);
                 _scroll = 0f;
                 _layoutSignature = null;
                 Sounds.Play(UISFXType.SmallButtonClick, 0.7f);
@@ -142,8 +147,9 @@ namespace FruktSharedLibrary.UI
                     return;
                 }
                 _group.alpha = Mathf.Clamp01((Time.unscaledTime - _openedAt) / 0.12f);
-                if (_page != null && _page.VisibleWhen != null && !SafeVisible(_page))
-                    _page = null;
+                ModMenu.RefreshTree();
+                while (_page != null && !SafeVisible(_page))
+                    Stack.RemoveAt(Stack.Count - 1);
 
                 RebuildIfNeeded();
                 HandleKeyCapture();
@@ -180,7 +186,7 @@ namespace FruktSharedLibrary.UI
 
                 _console = FruktUi.CreateMonoText("ConsoleLine", _screen, "", 26f, FruktTheme.Dim, 60f, 52f, 900f, 40f);
                 _trail = FruktUi.CreateMonoText("Trail", _screen, "", 26f, FruktTheme.Dim, 234f, 143f, 1200f, 40f);
-                _title = FruktUi.CreateDisplayText("Current", _screen, "MODS", 64f, FruktTheme.Text, 234f, 180f, 1400f, 110f);
+                _title = FruktUi.CreateDisplayText("Current", _screen, "MOD MENU", 64f, FruktTheme.Text, 234f, 180f, 1400f, 110f);
 
                 _viewport = FruktUi.CreateRect("Viewport", _screen, 0f, ViewTop, 1920f, ViewBottom - ViewTop);
                 _viewport.gameObject.AddComponent<RectMask2D>();
@@ -221,6 +227,7 @@ namespace FruktSharedLibrary.UI
             Rows.Clear();
 
             float y = 0f;
+            _modCount = ModMenu.LibraryMods.Count;
             if (_page == null)
             {
                 foreach (var page in VisiblePages())
@@ -278,6 +285,13 @@ namespace FruktSharedLibrary.UI
                 {
                     var row = BuildMenuLine(item.SafeText, y);
                     row.Item = item;
+                    return WithTooltip(row);
+                }
+                case ModMenuItemKind.Link:
+                {
+                    var row = BuildMenuLine(item.SafeText, y);
+                    row.Item = item;
+                    row.TargetPage = item.Target;
                     return WithTooltip(row);
                 }
                 case ModMenuItemKind.Toggle:
@@ -372,9 +386,9 @@ namespace FruktSharedLibrary.UI
 
         private static void Refresh()
         {
-            _console.text = $"fsl v{FruktSharedLibraryMod.Version} | pages: {CountVisiblePages()}";
-            _trail.text = _page == null ? _origin + " /" : $"{_origin} / mods /";
-            _title.text = (_page?.Title ?? "MODS").ToUpperInvariant();
+            _console.text = $"fsl v{FruktSharedLibraryMod.Version} | mods: {_modCount}";
+            _trail.text = Trail();
+            _title.text = (_page?.Title ?? "MOD MENU").ToUpperInvariant();
             _escAction.text = _page == null ? "CLOSE" : "BACK";
 
             foreach (var row in Rows)
@@ -383,7 +397,7 @@ namespace FruktSharedLibrary.UI
                     continue;
                 if (row.TargetPage != null || row.Item?.Kind == ModMenuItemKind.Button)
                 {
-                    string word = row.TargetPage != null ? row.TargetPage.Title : row.Item.SafeText;
+                    string word = row.Item != null ? row.Item.SafeText : row.TargetPage.Title;
                     row.Label.text = FruktUi.MenuLine(word, row.Hovered);
                     row.Label.color = FruktTheme.Text;
                     row.ToggleFrame.color = row.Hovered ? new Color(1f, 1f, 1f, 0.05f) : Color.clear;
@@ -494,7 +508,7 @@ namespace FruktSharedLibrary.UI
             {
                 if (row.TargetPage != null && row.Hovered)
                 {
-                    _page = row.TargetPage;
+                    Stack.Add(row.TargetPage);
                     _scroll = 0f;
                     _layoutSignature = null;
                     Sounds.Play(UISFXType.LargeButtonClick, 0.8f);
@@ -602,9 +616,13 @@ namespace FruktSharedLibrary.UI
 
         internal static RectTransform EscChip => _escChip;
 
+        internal static RectTransform Viewport => _viewport;
+
         internal static void ShowPage(ModMenuPage page)
         {
-            _page = page;
+            Stack.Clear();
+            if (page != null)
+                Stack.Add(page);
             _scroll = 0f;
             _layoutSignature = null;
             Update();
@@ -652,20 +670,26 @@ namespace FruktSharedLibrary.UI
 
         private static IEnumerable<ModMenuPage> VisiblePages()
         {
-            foreach (var page in ModMenu.OrderedPages())
+            foreach (var page in ModMenu.RootPages())
             {
                 if (SafeVisible(page))
                     yield return page;
             }
         }
 
-        private static int CountVisiblePages()
+        /// <summary>Breadcrumb like the game's: "pause / mod menu / mods /".</summary>
+        private static string Trail()
         {
-            int count = 0;
-            foreach (var _ in VisiblePages())
-                count++;
-            return count;
+            if (Stack.Count == 0)
+                return _origin + " /";
+            var builder = new StringBuilder(_origin).Append(" / mod menu / ");
+            for (int i = 0; i < Stack.Count - 1; i++)
+                builder.Append(Stack[i].Title.ToLowerInvariant()).Append(" / ");
+            return builder.ToString().TrimEnd();
         }
+
+        /// <summary>The pages opened from the top level, outermost first (self-test access).</summary>
+        internal static IReadOnlyList<ModMenuPage> PageStack => Stack;
 
         private static bool SafeVisible(ModMenuPage page)
         {

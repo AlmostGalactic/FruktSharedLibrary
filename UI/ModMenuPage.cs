@@ -26,6 +26,26 @@ namespace FruktSharedLibrary.UI
 
         internal ModMenuPage(string title) => Title = title;
 
+        /// <summary>
+        /// The mod that created the page (null for the library's own pages). Looked up from the creating assembly
+        /// on first use, because a mod can add pages before MelonLoader has finished registering it.
+        /// </summary>
+        internal MelonLoader.MelonBase Owner
+        {
+            get
+            {
+                if (_owner == null && SourceAssembly != null)
+                    _owner = ModMenu.FindOwner(SourceAssembly);
+                return _owner;
+            }
+            set => _owner = value;
+        }
+
+        /// <summary>The assembly that created the page.</summary>
+        internal System.Reflection.Assembly SourceAssembly { get; set; }
+
+        private MelonLoader.MelonBase _owner;
+
         /// <summary>Page title.</summary>
         public string Title { get; }
 
@@ -110,6 +130,37 @@ namespace FruktSharedLibrary.UI
                 SetKey = set ?? throw new ArgumentNullException(nameof(set)),
             });
 
+        /// <summary>
+        /// Adds a line that opens a new sub-page, and returns that sub-page so you can fill it. Keep a reference to
+        /// the page you were building if you want to add more items to it afterwards.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// var page = ModMenu.AddPage("My Mod").Toggle("Enabled", () => _on, v => _on = v);
+        /// page.AddSubPage("Advanced").Slider("Strength", 0f, 10f, () => _strength, v => _strength = v);
+        /// </code>
+        /// </example>
+        public ModMenuPage AddSubPage(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentException("Sub-page title is empty.", nameof(title));
+            var child = new ModMenuPage(title) { Owner = Owner, SourceAssembly = SourceAssembly };
+            Link(title, child);
+            return child;
+        }
+
+        /// <summary>A line that opens <paramref name="target"/>.</summary>
+        internal ModMenuPage Link(string text, ModMenuPage target)
+            => Add(new ModMenuItem(ModMenuItemKind.Link, () => text) { Target = target ?? throw new ArgumentNullException(nameof(target)) });
+
+        /// <summary>Shows items that belong to another page (the generated per-mod pages reuse the mod's own rows).</summary>
+        internal ModMenuPage AddShared(IEnumerable<ModMenuItem> items)
+        {
+            Items.AddRange(items);
+            Version++;
+            return this;
+        }
+
         /// <summary>A thin divider line.</summary>
         public ModMenuPage Separator() => Add(new ModMenuItem(ModMenuItemKind.Separator, () => string.Empty));
 
@@ -158,6 +209,7 @@ namespace FruktSharedLibrary.UI
         Choice,
         KeyBinding,
         Separator,
+        Link,
     }
 
     internal sealed class ModMenuItem
@@ -176,6 +228,7 @@ namespace FruktSharedLibrary.UI
         public Func<KeyBind> GetKey;
         public Action<KeyBind> SetKey;
         public IReadOnlyList<string> Options;
+        public ModMenuPage Target;
         public float Min;
         public float Max;
         public string Format;

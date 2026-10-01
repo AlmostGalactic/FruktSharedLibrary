@@ -2,85 +2,64 @@ using FruktSharedLibrary.Combat;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Entities;
 using FruktSharedLibrary.Gameplay;
-using FruktSharedLibrary.Spawning;
 using FruktSharedLibrary.UI;
 using FruktSharedLibrary.Utilities;
-using Il2CppData.Game;
 using UnityEngine;
 
 namespace FruktSharedLibrary.Internal
 {
     /// <summary>
-    /// The library's own "Sandbox Tools" page in the mod menu. Doubles as a live example of the API.
-    /// Can be turned off with the BuiltInMenuPage preference.
+    /// The library's own pages. Only things the base game can't already do: gravity, map/body/creature
+    /// clean-up and spawning live in the game's terminal (I), and delete/health/walk in its right-click menu.
     /// </summary>
     internal static class BuiltInMenu
     {
         internal static void Register()
         {
-            if (!FruktConfig.BuiltInMenuPage)
-                return;
+            if (FruktConfig.BuiltInMenuPage)
+                RegisterSandboxTools();
+            RegisterDeveloperTools();
+        }
 
+        private static void RegisterSandboxTools()
+        {
             static bool InSandbox() => GameState.InSandbox;
 
             ModMenu.AddPage("Sandbox Tools")
-                .Label(Status)
+                .Label("Load a map to use these tools.").OnlyWhen(() => !InSandbox())
 
-                .Header("World").OnlyWhen(InSandbox)
-                .Slider("Time scale", 0.05f, 2f, () => World.TimeScale, v => World.TimeScale = v).OnlyWhen(() => InSandbox() && !World.IsPaused)
-                .Slider("Gravity", GravityRange().Min, GravityRange().Max, () => World.GravityStrength, v => World.GravityStrength = v, "0.0").OnlyWhen(InSandbox)
-                .Button("Reset gravity", () => World.ResetGravity()).OnlyWhen(InSandbox)
-                .Button("Reset map props", () => World.ResetMap()).OnlyWhen(InSandbox)
-                .Button("Delete bodies", () => World.DeleteBodies()).OnlyWhen(InSandbox)
-                .Button("Delete every creature", () => World.DeleteAllCreatures()).OnlyWhen(InSandbox)
-
-                .Header("Spawn").OnlyWhen(InSandbox)
-                .Button("Human", () => Creatures.SpawnHumanInFront(3f, c => Notifications.Show($"Spawned {c.GetDisplayName()}"))).OnlyWhen(InSandbox)
-                .Button("Viper-17", () => Spawner.SpawnFirearmInFront(FirearmType.Viper17)).OnlyWhen(InSandbox)
-                .Button("Lynx-F", () => Spawner.SpawnFirearmInFront(FirearmType.LynxF)).OnlyWhen(InSandbox)
-                .Button("Grist-03", () => Spawner.SpawnFirearmInFront(FirearmType.Grist03)).OnlyWhen(InSandbox)
+                // The game's slow motion (T) is one fixed speed; this is any speed.
+                .Header("Time").OnlyWhen(InSandbox)
+                .Slider("Time scale", 0.05f, 2f, () => World.TimeScale, v => World.TimeScale = v).OnlyWhen(InSandbox)
+                .WithTooltip("Any game speed. Applies when you unpause; slow motion (T) switches back to normal speed.")
+                .Button("Normal speed", () => World.TimeScale = 1f).OnlyWhen(InSandbox)
 
                 .Header("Creature under crosshair").OnlyWhen(InSandbox)
                 .Label(AimedStatus).OnlyWhen(InSandbox)
                 .Button("Heal", () => WithAimed(c => c.Heal(), "Healed")).OnlyWhen(InSandbox)
+                .WithTooltip("Refills blood and closes bleeding wounds (lost tissue and limbs don't grow back).")
                 .Button("Kill", () => WithAimed(c => c.Kill(), "Killed")).OnlyWhen(InSandbox)
                 .Button("Launch upwards", () => WithAimed(c => c.AddForce(Vector3.up * 600f), "Launched")).OnlyWhen(InSandbox)
-                .Button("Delete", () => WithAimed(c => c.Delete(), "Deleted")).OnlyWhen(InSandbox)
                 .Button("Explosion at crosshair", Explode).OnlyWhen(InSandbox)
-                .Button("Log creature report", () => WithAimed(DevTools.LogCreature, "Report written to the console")).OnlyWhen(InSandbox)
-
-                .Header("Library")
-                .Toggle("Debug logging", () => FruktConfig.DebugLogging, v => FruktConfig.DebugLogging = v)
-                .Toggle("Notifications", () => FruktConfig.ShowNotifications, v => FruktConfig.ShowNotifications = v)
-                .Button("Log registered prefab IDs", DevTools.LogPrefabIds).OnlyWhen(InSandbox)
-                .Label(() => $"<size=12>FruktSharedLibrary v{FruktSharedLibraryMod.Version} · hooks {LibraryPatches.Status.Applied}/{LibraryPatches.Status.Total}</size>");
+                .WithTooltip("Tears tissue and throws everything within a few metres.");
         }
 
-        private static (float Min, float Max) GravityRange()
+        private static void RegisterDeveloperTools()
         {
-            try
-            {
-                return (WorldGravity.MIN_STRENGTH, WorldGravity.MAX_STRENGTH);
-            }
-            catch
-            {
-                return (0f, 30f);
-            }
-        }
-
-        private static string Status()
-        {
-            if (!GameState.InSandbox)
-                return $"Phase: {GameState.Phase}";
-            return $"Map: {World.GetMapDisplayName(GameState.CurrentMap ?? default)}   Creatures: {Creatures.Count}   Kills: {World.KillCount}";
+            // Appended to the generated Library settings page.
+            ModMenu.AddPage("Library settings")
+                .Header("Developer tools")
+                .Button("Log creature under crosshair", () => WithAimed(DevTools.LogCreature, "Report written to the console")).OnlyWhen(() => GameState.InSandbox)
+                .Button("Log registered prefab IDs", DevTools.LogPrefabIds).OnlyWhen(() => GameState.InSandbox)
+                .Label(() => $"FruktSharedLibrary v{FruktSharedLibraryMod.Version} · game hooks {LibraryPatches.Status.Applied}/{LibraryPatches.Status.Total} · mods using it: {ModMenu.LibraryMods.Count}");
         }
 
         private static string AimedStatus()
         {
             var creature = Creatures.GetAimedCreature();
             if (creature == null)
-                return "<i>Nothing under the crosshair.</i>";
-            return $"{creature.GetDisplayName()} — {(creature.IsLiving() ? "alive" : "dead")}, blood {creature.GetBlood():0.#}/{creature.GetBloodCapacity():0.#}, pain {creature.GetPain():0.00}, limbs {creature.GetLimbCount()}";
+                return "Nothing under the crosshair.";
+            return $"{creature.GetDisplayName()}, {(creature.IsLiving() ? "alive" : "dead")}";
         }
 
         private static void WithAimed(System.Action<Il2CppLVA.Creatures.AbstractCreature> action, string message)

@@ -41,6 +41,7 @@ namespace FruktSharedLibrary.Internal
                 .KeyBinding("Test key", () => bind, v => bind = v)
                 .Separator()
                 .Button("Test button", () => clicks++);
+            var subPage = page.AddSubPage("Test sub-page").Label("Inside a sub-page.");
             for (int i = 1; i <= 8; i++)
                 page.Label($"filler line {i}, here so the page needs scrolling");
             ModMenuItem Find(string text) => page.Items.Find(i => i.SafeText == text);
@@ -49,6 +50,7 @@ namespace FruktSharedLibrary.Internal
             var choiceItem = Find("Test choice");
             var keyItem = Find("Test key");
             var buttonItem = Find("Test button");
+            var subLink = Find("Test sub-page");
 
             try
             {
@@ -101,8 +103,19 @@ namespace FruktSharedLibrary.Internal
                 yield return Wait(1f);
                 Check("Clicking a button runs it", clicks == 1, "clicks=" + clicks);
 
+                NativeModMenu.ScrollTo(subLink);
+                yield return Wait(0.3f);
+                Click("sublink", NativeModMenu.HitFor(subLink));
+                yield return Wait(1f);
+                Check("Clicking a sub-page line opens it", NativeModMenu.CurrentPage == subPage && NativeModMenu.PageStack.Count == 2);
+                Click("esc-sub", NativeModMenu.EscChip, 0.1f);
+                yield return Wait(1f);
+                Check("Back from a sub-page returns to its page", NativeModMenu.CurrentPage == page);
+
                 NativeModMenu.ShowPage(page);
                 yield return Wait(0.3f);
+                Click("over-list", NativeModMenu.Viewport, 0.9f); // empty space: puts the cursor over the list
+                yield return Wait(0.8f);
                 Wheel("down", -5);
                 yield return Wait(1.2f);
                 Check("The mouse wheel scrolls the page", NativeModMenu.ScrollOffset > 100f, NativeModMenu.ScrollOffset.ToString("0"));
@@ -112,6 +125,54 @@ namespace FruktSharedLibrary.Internal
                 Click("esc-chip", NativeModMenu.EscChip, 0.1f);
                 yield return Wait(1f);
                 Check("The ESC chip goes back to the page list", NativeModMenu.CurrentPage == null && ModMenu.IsOpen);
+
+                // MODS: every installed mod that uses the library, with its own pages inside.
+                var modsPage = ModMenu.ModsPage;
+                Check("MODS is the first top-level line", ModMenu.RootPages().First() == modsPage);
+                Check("Built-in pages stay at the top level", ModMenu.RootPages().Any(p => p.Title == "Sandbox Tools"));
+                Click("mods", NativeModMenu.HitForPage(modsPage));
+                yield return Wait(1f);
+                Check("Clicking MODS opens the list of mods", NativeModMenu.CurrentPage == modsPage);
+                Shot("menu-mods");
+                yield return Wait(1.5f);
+                var example = ModMenu.LibraryMods.FirstOrDefault(m => m.Info.Name == "ExampleMod");
+                if (example == null)
+                {
+                    Check("MODS says when no mod uses the library", modsPage.Items.Count == 1 && modsPage.Items[0].SafeText.StartsWith("No installed mod"),
+                        "ExampleMod not installed; " + modsPage.Items.Count + " items");
+                }
+                else
+                {
+                    var modPage = ModMenu.PageOfMod(example);
+                    Check("A mod's page is not listed at the top level", !ModMenu.RootPages().Any(p => p.Owner == example));
+                    Click("mod-example", NativeModMenu.HitForPage(modPage));
+                    yield return Wait(1f);
+                    Check("Clicking a mod opens its entry", NativeModMenu.CurrentPage == modPage);
+                    string info = modPage.Items.Count > 0 ? modPage.Items[0].SafeText : "";
+                    Check("A mod's entry shows its version and author", info == "version 1.0.0 by test", info);
+                    var links = modPage.Items.FindAll(i => i.Kind == ModMenuItemKind.Link);
+                    Check("A mod's entry links to each of its pages", links.Count == 2 && links.Exists(l => l.SafeText == "Example settings"),
+                        string.Join(",", links.ConvertAll(l => l.SafeText)));
+                    Shot("menu-mod-example");
+                    yield return Wait(1.5f);
+                    var settingsLink = links.Find(l => l.SafeText == "Example settings");
+                    if (settingsLink != null)
+                    {
+                        Click("mod-example-settings", NativeModMenu.HitFor(settingsLink));
+                        yield return Wait(1f);
+                        Check("A mod's page opens from its entry", NativeModMenu.CurrentPage?.Title == "Example settings" && NativeModMenu.PageStack.Count == 3,
+                            NativeModMenu.CurrentPage?.Title);
+                        Shot("menu-mod-page");
+                        yield return Wait(1.5f);
+                        Click("esc-mod-1", NativeModMenu.EscChip, 0.1f);
+                        yield return Wait(0.8f);
+                    }
+                    Click("esc-mod-2", NativeModMenu.EscChip, 0.1f);
+                    yield return Wait(0.8f);
+                }
+                Click("esc-mods", NativeModMenu.EscChip, 0.1f);
+                yield return Wait(1f);
+                Check("Back from MODS returns to the top level", NativeModMenu.CurrentPage == null && ModMenu.IsOpen);
                 PressKey("Escape", 0x1B);
                 yield return Wait(1f);
                 Check("Esc closes the menu", !ModMenu.IsOpen);
@@ -123,6 +184,12 @@ namespace FruktSharedLibrary.Internal
                 {
                     Section("Pause menu line", () => Gameplay.World.Pause());
                     yield return Wait(2.5f);
+                    Section("Time scale while paused", () =>
+                    {
+                        Gameplay.World.TimeScale = 0.5f;
+                        Check("Setting the time scale while paused keeps the game paused", Time.timeScale == 0f && Mathf.Abs(Gameplay.World.TimeScale - 0.5f) < 0.001f,
+                            $"unity={Time.timeScale} world={Gameplay.World.TimeScale}");
+                    });
                     Check("PauseMenu added its line to the pause menu", PauseMenu.Attached && ModMenu.PauseEntry.Button != null,
                         ModMenu.PauseEntry.Button == null ? "no button" : ModMenu.PauseEntry.Label);
                     Shot("pause-with-button");
@@ -140,6 +207,8 @@ namespace FruktSharedLibrary.Internal
                     }
                     Gameplay.World.Resume();
                     yield return Wait(1f);
+                    Check("A time scale set while paused applies on resume", Mathf.Abs(Time.timeScale - 0.5f) < 0.01f, Time.timeScale.ToString("0.###"));
+                    Gameplay.World.TimeScale = 1f;
                 }
 
                 ModMenu.ForceSimple = true;
@@ -156,7 +225,7 @@ namespace FruktSharedLibrary.Internal
 
                 Section("Preferences page", TestPreferencesPage);
                 var library = ModMenu.Pages.Find(p => p.Title == "Library settings");
-                Check("The library's settings page exists and is listed last", library != null && ModMenu.OrderedPages().Last() == library);
+                Check("The library's settings page exists and is listed last", library != null && ModMenu.RootPages().Last() == library);
                 if (library != null)
                 {
                     ModMenu.Open();
@@ -165,6 +234,14 @@ namespace FruktSharedLibrary.Internal
                     yield return Wait(1f);
                     Shot("menu-library-settings");
                     yield return Wait(1.5f);
+                    var tools = ModMenu.Pages.Find(p => p.Title == "Sandbox Tools");
+                    if (tools != null)
+                    {
+                        NativeModMenu.ShowPage(tools);
+                        yield return Wait(1f);
+                        Shot("menu-sandbox-tools");
+                        yield return Wait(1.5f);
+                    }
                 }
             }
             finally

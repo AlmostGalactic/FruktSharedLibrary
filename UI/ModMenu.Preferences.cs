@@ -27,11 +27,13 @@ namespace FruktSharedLibrary.UI
         /// </summary>
         /// <param name="category">The category your mod created with <c>MelonPreferences.CreateCategory</c>.</param>
         /// <param name="title">Page title; defaults to the category's display name.</param>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         public static ModMenuPage AddPreferencesPage(MelonPreferences_Category category, string title = null)
         {
             if (category == null)
                 throw new ArgumentNullException(nameof(category));
-            var page = AddPage(string.IsNullOrWhiteSpace(title) ? category.DisplayName ?? category.Identifier : title);
+            var page = AddPage(string.IsNullOrWhiteSpace(title) ? category.DisplayName ?? category.Identifier : title,
+                System.Reflection.Assembly.GetCallingAssembly());
             page.Clear();
             foreach (var entry in category.Entries)
             {
