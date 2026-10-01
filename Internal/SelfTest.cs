@@ -451,7 +451,12 @@ namespace FruktSharedLibrary.Internal
                 Notifications.Warn("A warning-style notification", 8f);
             });
             for (float end = Now() + 1f; Now() < end;) yield return null;
-            Section("UI (deferred)", () => Check("Notifications drew without errors", !Notifications.DrawFailed));
+            Section("UI (deferred)", () =>
+            {
+                Check("Notifications drew without errors", !Notifications.DrawFailed);
+                if (Notifications.UsingNative)
+                    Check("Notifications use the native style", Notifications.NativeViewCount == 2, Notifications.NativeViewCount + " plates");
+            });
             var menuTest = TestModMenu();
             while (true)
             {

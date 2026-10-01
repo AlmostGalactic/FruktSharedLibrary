@@ -45,6 +45,7 @@ namespace FruktSharedLibrary
             CreatureTracker.Update();
             ModMenu.Update();
             PauseMenu.Update();
+            Notifications.Update();
             GameEvents.RaiseUpdate();
         }
 
