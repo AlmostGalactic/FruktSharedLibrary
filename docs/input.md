@@ -1,21 +1,21 @@
 # Input
 
-Namespace `FruktSharedLibrary.Controls`. FRUKT uses Unity's newer Input System, and the old `UnityEngine.Input`
-class may be disabled in it. These helpers read the Input System and only fall back to the old API if they have
-to. Keys are `UnityEngine.InputSystem.Key` values.
+FRUKT uses Unity's newer Input System, and the old `UnityEngine.Input` class may not work in it. The helpers in
+`FruktSharedLibrary.Controls` read the Input System, and only use the old class if they have to. Keys are
+`UnityEngine.InputSystem.Key` values.
 
 ## FruktInput
 
 | Member | Description |
 |--------|-------------|
-| `GetKeyDown(key)`, `GetKey(key)`, `GetKeyUp(key)` | Pressed this frame, held, released this frame. |
-| `CtrlHeld`, `ShiftHeld`, `AltHeld` | Either side of the modifier is held. |
-| `GetMouseButtonDown(button)`, `GetMouseButton(button)` | 0 = left, 1 = right, 2 = middle. |
-| `MousePosition` | Screen pixels, origin at the bottom left. |
-| `ScrollDelta` | Mouse wheel movement this frame. |
-| `TryGetPressedKey(out key, includeModifiers = false)` | The first key pressed this frame, for "press a key" prompts. Modifiers are skipped by default, so Ctrl+K reports K. |
-| `IsModifier(key)` | True for Ctrl, Shift, Alt and the Windows/Command keys. |
-| `TryParseKey(text, out key)` | Parses names such as `F8`, `Insert`, `Digit1`, `Numpad0`, plus the aliases `1`, `Ctrl`, `Shift`, `Alt`, `Esc`, `Del`, `Ins`, `PgUp`, `PgDn`, `Return` and `` ` ``. |
+| `GetKeyDown(key)`, `GetKey(key)`, `GetKeyUp(key)` | Pressed this frame, held down, released this frame. |
+| `CtrlHeld`, `ShiftHeld`, `AltHeld` | Whether either Ctrl, Shift or Alt key is down. |
+| `GetMouseButtonDown(button)`, `GetMouseButton(button)` | 0 is left, 1 is right, 2 is middle. |
+| `MousePosition` | In screen pixels, counted from the bottom left. |
+| `ScrollDelta` | How far the mouse wheel moved this frame. |
+| `TryGetPressedKey(out key, includeModifiers = false)` | The first key pressed this frame, for "press a key" prompts. Modifier keys are ignored unless you ask for them, so Ctrl+K gives you K. |
+| `IsModifier(key)` | Whether the key is Ctrl, Shift, Alt or the Windows/Command key. |
+| `TryParseKey(text, out key)` | Reads a key name like `F8`, `Insert`, `Digit1` or `Numpad0`. It also understands `1`, `Ctrl`, `Shift`, `Alt`, `Esc`, `Del`, `Ins`, `PgUp`, `PgDn`, `Return` and `` ` ``. |
 
 ```csharp
 public override void OnUpdate()
@@ -27,20 +27,22 @@ public override void OnUpdate()
 
 ## KeyBind
 
-A key plus optional modifiers, for configurable hotkeys. Text form: `F8`, `Ctrl+M`, `Shift+Alt+K`.
+A key with optional Ctrl, Shift or Alt, for hotkeys that players can change. As text it looks like `F8`, `Ctrl+M`
+or `Shift+Alt+K`.
 
 | Member | Description |
 |--------|-------------|
-| `new KeyBind(key, ctrl = false, shift = false, alt = false)` | Build one in code. |
-| `KeyBind.TryParse(text, out bind)` | Parse text; `false` if it's invalid. |
-| `KeyBind.Parse(text, fallback)` | Parse text, using `fallback` (a `Key`) if it's invalid. |
-| `WasPressed()` | True on the frame the key was pressed with exactly the required modifiers held. |
-| `IsHeld()` | True while the key and modifiers are held. |
-| `Key`, `Ctrl`, `Shift`, `Alt` | The parts. |
-| `ToString()` | The text form, suitable for saving. |
+| `new KeyBind(key, ctrl = false, shift = false, alt = false)` | Makes one in code. |
+| `KeyBind.TryParse(text, out bind)` | Reads one from text. Returns `false` if the text isn't valid. |
+| `KeyBind.Parse(text, fallback)` | Reads one from text, and uses the `fallback` key if the text isn't valid. |
+| `WasPressed()` | True on the frame the key goes down with exactly the right modifiers held. |
+| `IsHeld()` | True while the key and its modifiers are held down. |
+| `Key`, `Ctrl`, `Shift`, `Alt` | Its parts. |
+| `ToString()` | The text version, which you can save. |
 
-A typical setup keeps the bind as text in your preferences and lets players rebind it in the mod menu, either with
-a `KeyBinding` row or automatically through [`AddPreferencesPage`](mod-menu.md#settings-pages-from-melonpreferences):
+The usual way to do it is to store the key as text in your preferences, so players can rebind it in the mod
+menu. [`AddPreferencesPage`](mod-menu.md#settings-pages-from-melonpreferences) turns it into a key binding row
+for you, or you can add a `KeyBinding` row yourself.
 
 ```csharp
 private MelonPreferences_Entry<string> _toggleKey;

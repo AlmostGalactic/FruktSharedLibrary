@@ -1,60 +1,60 @@
 # Notifications and native UI
 
-Namespace `FruktSharedLibrary.UI`.
+Everything here is in `FruktSharedLibrary.UI`.
 
 ## Notifications
 
-Short messages in the top-right corner, drawn like the game's own panels. They fade in and out, and their
-timing uses real time, so they aren't affected by pause or slow motion.
+Short messages that pop up in the top-right corner, drawn like the game's panels. They fade in and out on their
+own. The timing is in real seconds, so pausing or slow motion doesn't make them hang around longer.
 
 | Member | Description |
 |--------|-------------|
 | `Show(text, seconds = 3)` | A normal message. |
-| `Show(text, color, seconds = 3)` | A message whose top strip uses `color`. |
+| `Show(text, color, seconds = 3)` | A message with the strip along its top in `color`. |
 | `Warn(text, seconds = 4)` | An orange warning. |
-| `Clear()` | Removes every message. |
+| `Clear()` | Gets rid of all of them. |
 
 ```csharp
 Notifications.Show("Saved");
 Notifications.Warn("Aim at a creature first.");
 ```
 
-Players can turn notifications off in *Library settings*.
+Players can turn notifications off under Library settings.
 
 ## FruktTheme
 
-The game's colours and fonts, measured from its menus.
+The game's colours and fonts, taken from its own menus.
 
-| Member | Value |
-|--------|-------|
-| `Background` | `#1C1C1C`, panel background |
-| `Text` | `#CDCDCD`, main text and the strip along the top of panels |
-| `Muted` | `#787878`, secondary values such as slider readouts |
-| `Dim` | `#4A4A4A`, breadcrumbs, console lines, "off" |
-| `Line` | `#2F2F2F`, separators |
-| `Accent` | `#FFA600`, the orange of sliders, toggles and selected options |
-| `Frame` | `#9E9E9E`, toggle box frames |
-| `DisplayFont` | "GNF", the pixel font used for titles and menu lines |
-| `MonoFont` | "Departure Mono", used for setting labels, values and console text |
-| `BorderSprite` | The thin square border used by toggles and key chips |
-| `Available` | True once the game's fonts are loaded (after the first scene) |
+| Member | What it is |
+|--------|------------|
+| `Background` | `#1C1C1C`, the dark panel colour |
+| `Text` | `#CDCDCD`, normal text, and the strip across the top of panels |
+| `Muted` | `#787878`, less important text like the numbers next to sliders |
+| `Dim` | `#4A4A4A`, breadcrumbs, console text, "off" |
+| `Line` | `#2F2F2F`, divider lines |
+| `Accent` | `#FFA600`, the orange on sliders, toggles and selected options |
+| `Frame` | `#9E9E9E`, the border of toggle boxes |
+| `DisplayFont` | GNF, the pixel font for titles and menu lines |
+| `MonoFont` | Departure Mono, for setting names, values and console text |
+| `BorderSprite` | The thin square border around toggles and key buttons |
+| `Available` | Whether the fonts have loaded yet. They load with the first scene. |
 
 ## FruktUi
 
-Builders for Unity UI that matches the game. Positions are in a 1920x1080 reference space with the origin at the
-top left and y growing downwards, the same as the game's menus. Canvases scale with the screen.
+Helpers for building Unity UI that fits in with the game. Positions use a 1920x1080 layout measured from the top
+left, with y going down, the same way the game lays out its menus. The canvas scales to the real screen size.
 
 | Member | Description |
 |--------|-------------|
-| `CreateCanvas(name, sortingOrder = 5000, blockGameClicks = true)` | A screen-space canvas that survives scene loads and sits above the game's menus. |
-| `CreatePanel(name, parent, x, y, width, height, capStrip = 15)` | A dark panel with the light strip along its top. |
+| `CreateCanvas(name, sortingOrder = 5000, blockGameClicks = true)` | A canvas that sits on top of the game's menus and survives scene changes. |
+| `CreatePanel(name, parent, x, y, width, height, capStrip = 15)` | A dark panel with the light strip across the top. |
 | `CreateDisplayText(...)`, `CreateMonoText(...)`, `CreateText(...)` | TextMeshPro text in the game's fonts. |
-| `CreateImage(...)`, `CreateFrame(...)` | A solid colour block, or the square border. |
-| `CreateRect(...)`, `CreateFill(...)`, `Place(...)` | Plain rects and positioning. |
-| `IsHovered(rect)`, `TryGetLocalMouse(rect, out local)` | Mouse checks that read the input system directly, so they work on top of any game menu. |
-| `MenuLine(word, hovered)` | Text for a game-style menu line: "> WORD_" with the arrow and cursor only shown while hovered. |
-| `SettingLabel(text)` | Formats a label like the game's settings: "Mouse sensitivity" becomes "mouse_sensitivity:". |
-| `CloneGameUi(prototype, parent, name)` | Copies one of the game's own widgets (a button, a row, a whole screen) with its services connected, so hover effects and click events work on the copy. |
+| `CreateImage(...)`, `CreateFrame(...)` | A block of colour, or the square border. |
+| `CreateRect(...)`, `CreateFill(...)`, `Place(...)` | Empty rects, and positioning. |
+| `IsHovered(rect)`, `TryGetLocalMouse(rect, out local)` | Mouse checks that read the input directly, so they still work on top of the game's own menus. |
+| `MenuLine(word, hovered)` | Text for a line like the game's menu buttons: "> WORD_", with the arrow and underscore only while hovered. |
+| `SettingLabel(text)` | Turns "Mouse sensitivity" into "mouse_sensitivity:", the way the game labels its settings. |
+| `CloneGameUi(prototype, parent, name)` | Copies a piece of the game's own UI (a button, a row, a whole screen) and hooks it up so hovering and clicking work on the copy. |
 
 ```csharp
 var canvas = FruktUi.CreateCanvas("MyMod.Panel");
@@ -63,15 +63,15 @@ FruktUi.CreateDisplayText("Title", panel, "MY MOD", 40f, FruktTheme.Text, 24f, 3
 FruktUi.CreateMonoText("Body", panel, "hello from my mod", 24f, FruktTheme.Muted, 24f, 100f, 470f, 40f);
 ```
 
-If your UI takes the mouse, pair it with [`LocalPlayer.CaptureCursor`](world-and-player.md#localplayer) so the
-cursor is free and the game doesn't act on clicks behind it.
+If your UI needs the mouse, call [`LocalPlayer.CaptureCursor`](world-and-player.md#localplayer) while it's open.
+That frees the cursor and stops the game reacting to clicks behind your UI.
 
-A plain `Instantiate` of a game widget gives a copy that never animates or raises clicks, because the game's
-components get their services through injection. Use `CloneGameUi` instead. See
-[IL2CPP notes](il2cpp-notes.md).
+Don't copy the game's UI with a plain `Instantiate`. The copy won't animate or respond to clicks, because the
+game's UI pieces get their services handed to them when they're created. `CloneGameUi` takes care of that. The
+[IL2CPP notes](il2cpp-notes.md) explain why.
 
 ## GuiStyles
 
-If you draw your own overlay with `OnGUI`, `GuiStyles` has the styles and textures the library's plain fallback
-menu uses (`Panel`, `Accent`, `Label`, `Header`, `Title`, `Button`, `Notification`, `MakeTexture`). Only use it
+If you're drawing an overlay in `OnGUI`, `GuiStyles` has the styles and textures the library's plain fallback menu
+uses: `Panel`, `Accent`, `Label`, `Header`, `Title`, `Button`, `Notification` and `MakeTexture`. They only work
 inside `OnGUI`.

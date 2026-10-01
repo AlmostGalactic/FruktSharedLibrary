@@ -1,80 +1,86 @@
 # IL2CPP notes
 
-FRUKT is compiled with IL2CPP: the game's C# was converted to native code, and MelonLoader generates proxy
-assemblies so mods can call into it. Most things work as you'd expect. The problems below don't, and each one was
-found while building this library against the real game. The library handles them in its own code. You only need
-these notes when you work with game types directly.
+FRUKT is built with IL2CPP, which means the game's C# code was turned into native code before it shipped.
+MelonLoader generates stand-in assemblies so mods can still call into it. Most of the time that works fine.
+These are the times it didn't, all found while building this library against the real game.
+
+The library already works around every one of these. You only need to know about them if you use game types
+directly.
 
 ## Don't Harmony-patch small or empty methods
 
-IL2CPP merges methods whose native code is identical into one function. `SandboxState.Exit()` is empty, and so
-are hundreds of other methods, all sharing one native function. Patching it hooked about 98,000 unrelated calls
-in two minutes and broke them.
+When two methods compile to exactly the same native code, IL2CPP keeps just one copy and points both at it.
+`SandboxState.Exit()` is empty, and so are hundreds of other methods, so they all share a single function.
+Patching it hooked about 98,000 unrelated calls in two minutes, and broke them.
 
-Patch methods that do real work, and check the instance type in your hook so calls from merged methods are
-ignored. Every hook in the library does this, and logs a warning if it ever sees a call from the wrong type.
+Patch methods that actually do something, and check the instance type inside your hook so you can ignore calls
+that come from the wrong class. The library's own hooks all do this, and log a warning if one ever gets called on
+the wrong type.
 
-## Don't enumerate game collections through their interfaces
+## Don't loop over game collections through their interfaces
 
-A `foreach` over a game collection typed as `IEnumerable<T>`, `IReadOnlyCollection<T>` or `IReadOnlyList<T>` uses
-a boxed struct enumerator that the interop calls with the wrong `this`. You get "Collection was modified" or
-garbage. Copy it with [`ToManagedList()`](interop-and-utilities.md#collections) first.
+If a game collection is typed as `IEnumerable<T>`, `IReadOnlyCollection<T>` or `IReadOnlyList<T>` and you
+`foreach` over it, the interop gets the enumerator wrong. You'll see "Collection was modified" errors or junk
+values. Copy it with [`ToManagedList()`](interop-and-utilities.md#collections) first.
 
-## Game methods hide your extension methods
+## Game methods win over your extension methods
 
-C# picks an instance method over an extension method with the same name, without a warning. `AbstractLimb` has
-its own `GetOrgans()` (a factory used when the limb is set up), so an extension called `GetOrgans` is silently
-never called. That's why the library's version is `GetAllOrgans()`. Check for name clashes when you write
-extensions for game types.
+If a game class has a method with the same name as your extension method, C# calls the game's method and doesn't
+warn you. `AbstractLimb` has its own `GetOrgans()`, which is a setup method, so an extension called `GetOrgans`
+just never runs. That's why the library's one is named `GetAllOrgans()`. Watch for this whenever you write
+extensions for game classes.
 
-## `AbstractLimb.GetLimbNode()` creates a new node
+## `AbstractLimb.GetLimbNode()` makes a new node
 
-It doesn't return the limb's live hierarchy node; it builds a fresh, unattached one. The live node is
-`limb.References.Node` (or the library's `limb.GetNode()`).
+You'd expect it to return the limb's node in the body's hierarchy. It doesn't; it creates a new one that isn't
+attached to anything. The real node is `limb.References.Node`, or use the library's `limb.GetNode()`.
 
-## Many `ref` parameters are `out` in the interop
+## A lot of `ref` parameters are `out` in the interop
 
-For example `TryGetNativeLimbByTag(tag, out limb)`. Follow what the compiler asks for.
+For example `TryGetNativeLimbByTag(tag, out limb)`. Just do what the compiler tells you.
 
-## Abstract game methods can't be patched or overridden
+## You can't patch or override abstract game methods
 
-There's no code behind an abstract method to hook, and you can't subclass game types from C#. For example
-`ContextMenuAction.ExecuteLogic`. The library's custom right-click actions are instances of a concrete game action
-whose method is intercepted only for the library's own instances.
+An abstract method has no code to hook, and you can't make subclasses of game classes from C#.
+`ContextMenuAction.ExecuteLogic` is one of these. To get custom right-click actions anyway, the library makes
+instances of one of the game's real actions and intercepts that action's method, but only for its own instances.
 
-## Objects build their right-click menu when they spawn
+## Right-click menus are built when things spawn
 
-Not when the menu opens. Actions registered later have to be inserted into menus that already exist. The library
-does this.
+Not when you open them. So if you add an action after something has spawned, it has to be put into that object's
+existing menu by hand. The library does that for you.
 
-## Screenshots and image conversion are missing
+## Screenshots and image conversion don't work
 
-`ScreenCapture.CaptureScreenshot(string)` and Unity's `ImageConversion` methods are stripped or broken in this
+`ScreenCapture.CaptureScreenshot(string)` and Unity's `ImageConversion` methods are missing or broken in this
 build. Use [`Textures`](interop-and-utilities.md#textures) to load and save images.
 
-## The pause key ignores the game's input block
+## Blocking input doesn't block the pause key
 
-The game's Esc handler is marked to ignore input blocking, so blocking input isn't enough to keep Esc for your own
-menu. The library intercepts it while the mod menu is open, and on the frame it closes.
+The game's Esc handler ignores the game's own input blocking, so blocking input won't stop Esc from opening the
+pause menu over yours. The library catches Esc itself while the mod menu is open, including on the frame it
+closes.
 
 ## Copies of the game's UI need its services
 
-The game's UI widgets get a "core services provider" through injection. A plain `Instantiate` produces a copy that
-never animates or raises clicks. [`FruktUi.CloneGameUi`](ui.md#fruktui) copies the widget while it's inactive,
-hands over the provider, then activates it.
+The game's UI pieces are given a "core services provider" when they're created. If you copy one with
+`Instantiate`, the copy doesn't get it, so it never animates or responds to clicks.
+[`FruktUi.CloneGameUi`](ui.md#fruktui) makes the copy while it's switched off, gives it the provider, and then
+switches it on.
 
 ## Some audio calls crash the game
 
-Two things crashed FRUKT outright while debugging sounds:
+Two things crashed FRUKT straight to desktop while tracking down a sound bug:
 
-- Harmony-patching the game's sound service method that takes its play settings as a `ref` struct
-  (`SFXPlayerService.Play(UISFXType, ref SFXPlayParams)`).
-- Reading the samples of one of the game's audio clips with `AudioClip.GetData`.
+- Harmony-patching the game's sound method that takes its settings as a `ref` struct
+  (`SFXPlayerService.Play(UISFXType, ref SFXPlayParams)`)
+- Reading a game audio clip's samples with `AudioClip.GetData`
 
-To find out which sounds play, poll active `AudioSource`s and log the ones that just started.
+If you need to know which sounds are playing, check the active `AudioSource`s every frame and look for ones that
+just started.
 
 ## Some UI sounds are long
 
-`UISFXType.WindowOpenClose` is a two-second run of ticks. The game only plays it during its screen transitions and
-fades it out. Played in full, it sounds like the same click repeating. Use another sound, or
-[`Sounds.PlayFor`](world-and-player.md#sounds) to play just the start.
+`UISFXType.WindowOpenClose` is two seconds of ticking. The game only plays it during its screen transitions and
+fades it out quickly, but played in full it sounds like the same click going off over and over. Pick a different
+sound, or use [`Sounds.PlayFor`](world-and-player.md#sounds) to play just the start of it.

@@ -2,66 +2,67 @@
 
 ## Building
 
-You need the .NET SDK (6 or newer) and a FRUKT install with MelonLoader that has been started at least once, so
-`MelonLoader/Il2CppAssemblies` exists. The game's assemblies aren't in this repository and must not be committed.
+You need the .NET SDK (6 or newer), and FRUKT with MelonLoader installed and started at least once so that
+`MelonLoader/Il2CppAssemblies` exists. The game's assemblies aren't in this repo, and shouldn't ever be committed.
 
 ```
 dotnet build
 ```
 
-The project targets `net6.0` x64. The game path defaults to `D:\SteamLibrary\steamapps\common\FRUKT`; point it at
-your install with:
+It builds for `net6.0`, x64. By default it looks for the game in `D:\SteamLibrary\steamapps\common\FRUKT`. If
+yours is somewhere else, pass the path:
 
 ```
 dotnet build -p:FruktGameDir="C:\path\to\FRUKT"
 ```
 
-or a `FruktGameDir` environment variable. Every build copies `FruktSharedLibrary.dll` and its XML docs into the
-game's `Mods` folder. Add `-p:CopyToGameMods=false` to skip that.
+or set a `FruktGameDir` environment variable. Each build copies `FruktSharedLibrary.dll` and its XML docs into the
+game's `Mods` folder. Add `-p:CopyToGameMods=false` if you don't want that.
 
 ## The self-test
 
-Compiling proves very little in an IL2CPP game, because most problems only appear at runtime. The library contains
-a self-test that drives the real game and checks every API.
+In an IL2CPP game, code compiling doesn't tell you much. Most problems only show up once it's running. So the
+library has a self-test that plays the actual game and checks everything.
 
-1. Create `FRUKT/UserData/FruktSharedLibrary.selftest`. Put `quit` in it to close the game when the test is done.
-2. Start the game. From the main menu the test loads a map, runs its checks, returns to the menu and (with `quit`)
-   closes the game.
-3. Read the report in `UserData/FruktSharedLibrary.selftest.log`. It ends with `Passed: N  Failed: N`.
-4. **Delete the flag file**, or the test runs on every launch.
+1. Create `FRUKT/UserData/FruktSharedLibrary.selftest`. If you put `quit` in it, the game closes when the test
+   finishes.
+2. Start the game. From the main menu, the test loads a map, runs its checks, goes back to the menu, and quits if
+   you asked it to.
+3. The results are in `UserData/FruktSharedLibrary.selftest.log`. The last line is `Passed: N  Failed: N`.
+4. Delete the flag file afterwards, or the test will run every time you start the game.
 
-The test spawns creatures, changes the time scale and gravity, and opens menus. It puts everything back, and it
-leaves your `MelonPreferences.cfg` as it found it.
+It spawns creatures, changes the time scale and gravity, and opens menus, then puts everything back how it was.
+Your `MelonPreferences.cfg` ends up exactly as it started.
 
-### Real input
+### Clicking and typing for real
 
-The mod menu and right-click menu checks use real mouse clicks, wheel turns and key presses. The test writes
-markers such as `[SelfTest] CLICK <name> <x> <y>` to `MelonLoader/Latest.log`, and the script
-`tools/selftest-watch.ps1` performs them on the game window and takes screenshots:
+The checks for the mod menu and right-click menu use real mouse clicks, scrolling and key presses. The test
+writes lines like `[SelfTest] CLICK <name> <x> <y>` to `MelonLoader/Latest.log`, and `tools/selftest-watch.ps1`
+does those clicks in the game window and takes screenshots:
 
 ```
 powershell -File tools\selftest-watch.ps1 -GameDir "C:\path\to\FRUKT"
 ```
 
-Start it right after launching the game and leave FRUKT in the foreground. Input is only sent while the game is
-the active window. Screenshots go to `tools/shots`. Without the script, the checks that need clicks fail and the
-rest of the report is still valid.
+Run it right after you start the game, and leave the game in front. It only sends input while FRUKT is the active
+window. Screenshots end up in `tools/shots`. If you don't run it, the checks that need clicks will fail, but the
+rest of the results still count.
 
-### UI probe
+### The UI probe
 
-Writing `probe quit` to the flag file runs a probe instead of the test. It dumps the layout of the game's pause and
-settings screens (positions, fonts, colours) to `UserData/FruktSharedLibrary.probe.txt` and takes screenshots.
-This is how the native mod menu was matched to the game's own screens.
+If the flag file says `probe quit` instead, you get a probe rather than the test. It writes out the layout of the
+game's pause and settings screens (positions, fonts, colours) to `UserData/FruktSharedLibrary.probe.txt`, and
+takes screenshots. That's how the mod menu was made to match the game's own screens.
 
 ## After a game update
 
-1. Rebuild against the new `Il2CppAssemblies` (start the game once so MelonLoader regenerates them).
-2. Fix compile errors. Renamed or removed game members show up here.
-3. Run the self-test. Failed checks point at the features the update broke.
-4. Watch the start of `Latest.log` for `Game hooks: N/N applied`. Fewer applied hooks means a hooked game method
-   changed.
+1. Start the game once so MelonLoader regenerates `Il2CppAssemblies`, then rebuild.
+2. Fix any compile errors. This is where renamed or removed game members show up.
+3. Run the self-test. The failed checks tell you which features the update broke.
+4. Check near the top of `Latest.log` for `Game hooks: N/N applied`. If fewer than all of them applied, one of
+   the game methods the library hooks has changed.
 
-## Project layout
+## Where things are
 
 ```
 FruktSharedLibraryMod.cs   MelonLoader entry point: update loop, GUI and hooks

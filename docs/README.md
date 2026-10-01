@@ -1,31 +1,30 @@
-# FruktSharedLibrary documentation
+# FruktSharedLibrary docs
 
-| Page | Covers |
-|------|--------|
-| [Getting started](getting-started.md) | Project setup, the dependency attribute, a complete example mod |
+| Page | What's on it |
+|------|--------------|
+| [Getting started](getting-started.md) | Setting up a mod project, and a full example mod |
 | [Core](core.md) | `GameServices`, `GameEvents`, `GameState`, `Scheduler`, `Patcher`, `FruktLog` |
 | [World, player and sounds](world-and-player.md) | `World`, `LocalPlayer`, `Sounds` |
-| [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the LVA simulation, `Damage` |
+| [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the body simulation, `Damage` |
 | [Spawning](spawning.md) | `Spawner`, `FirearmType`, firearm extensions |
-| [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages from preferences, `PauseMenu`, the library's own settings |
+| [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages, `PauseMenu`, the library's settings |
 | [Right-click menus](context-menus.md) | `ContextMenus`, `ContextMenuGroup`, `ContextMenuContext` |
 | [Notifications and native UI](ui.md) | `Notifications`, `FruktTheme`, `FruktUi`, `GuiStyles` |
 | [Input](input.md) | `FruktInput`, `KeyBind` |
-| [Interop and utilities](interop-and-utilities.md) | IL2CPP casts and collections, game event subscriptions, `Layers`, `Textures`, `DevTools` |
-| [IL2CPP notes](il2cpp-notes.md) | Problems you'll hit when touching game types directly, and how to avoid them |
-| [Building and testing](building-and-testing.md) | Building the library, the in-game self-test, project layout |
+| [Interop and utilities](interop-and-utilities.md) | IL2CPP casts and collections, game events, `Layers`, `Textures`, `DevTools` |
+| [IL2CPP notes](il2cpp-notes.md) | Things that break when you use game types directly, and what to do instead |
+| [Building and testing](building-and-testing.md) | Building the library, the in-game self-test, the project layout |
 
-Every public member also has XML documentation, so IntelliSense shows the same descriptions while you code. Keep
+Everything public also has XML docs, so you get the same descriptions in IntelliSense. Keep
 `FruktSharedLibrary.xml` next to the DLL you reference.
 
-## Conventions
+## Before you start
 
-- Everything is a static class or an extension method. There is nothing to construct or initialise.
-- Namespaces follow the folders: `FruktSharedLibrary.Core`, `.Gameplay`, `.Entities`, `.Combat`, `.Spawning`,
-  `.UI`, `.Controls`, `.Interop`, `.Utilities`.
-- Game types keep their interop names, which start with `Il2Cpp` (`Il2CppLVA.Creatures.AbstractCreature`,
-  `Il2CppData.Maps.MapID` and so on).
-- Most gameplay calls need a loaded map. Check `GameState.InSandbox`, or do the work from
-  `GameEvents.SandboxReady`.
-- Methods that can fail at runtime return `bool` or `null` and log the reason instead of throwing.
-- Call everything from the main thread. From other threads, use `Scheduler.RunOnMainThread`.
+- It's all static classes and extension methods. There's nothing to create or set up.
+- Namespaces match the folders: `FruktSharedLibrary.Core`, `.Gameplay`, `.Entities`, `.Combat`, `.Spawning`,
+  `.UI`, `.Controls`, `.Interop` and `.Utilities`.
+- Game types keep their interop names, which start with `Il2Cpp` (for example
+  `Il2CppLVA.Creatures.AbstractCreature` or `Il2CppData.Maps.MapID`).
+- Most gameplay calls need a loaded map. Check `GameState.InSandbox`, or start from `GameEvents.SandboxReady`.
+- When something can fail at runtime, it returns `false` or `null` and logs why, instead of throwing.
+- Call everything from the main thread. If you're on another thread, go through `Scheduler.RunOnMainThread`.

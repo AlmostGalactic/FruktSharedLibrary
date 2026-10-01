@@ -1,16 +1,11 @@
 # Getting started
 
-## Requirements
-
-- FRUKT with MelonLoader 0.7 or newer. Start the game once after installing MelonLoader so it generates
-  `MelonLoader/Il2CppAssemblies`.
-- The .NET SDK (6 or newer).
-- `FruktSharedLibrary.dll` in `FRUKT/Mods`.
+You'll need FRUKT with MelonLoader 0.7 or newer, the .NET SDK (6 or newer), and `FruktSharedLibrary.dll` in
+`FRUKT/Mods`. Start the game once after installing MelonLoader so it generates `MelonLoader/Il2CppAssemblies`.
 
 ## Project setup
 
-Create an SDK-style class library targeting `net6.0` and reference the library, MelonLoader and the game
-assemblies you use:
+Make a class library that targets `net6.0`, and reference the library, MelonLoader and the game assemblies:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -33,11 +28,10 @@ assemblies you use:
 </Project>
 ```
 
-Change `FruktGameDir` to your install. `Private="false"` stops the build from copying these files next to your
-mod; they are already in the game folder.
+Set `FruktGameDir` to wherever your game is installed. `Private="false"` keeps the build from copying these
+files next to your mod, since they're already in the game folder.
 
-Some APIs use types from other assemblies in `MelonLoader\Il2CppAssemblies`. Add them when the compiler asks
-for them:
+A few features need more assemblies from `MelonLoader\Il2CppAssemblies`. The compiler will tell you when:
 
 | Assembly | Needed for |
 |----------|------------|
@@ -47,19 +41,19 @@ for them:
 | `UnityEngine.UIModule.dll`, `UnityEngine.UI.dll`, `Unity.TextMeshPro.dll` | Building UI with `FruktUi` |
 | `Il2CppZenject.dll` | Using `GameServices` containers directly |
 
-## Declaring the dependency
+## The dependency attribute
 
-In your `AssemblyInfo.cs`, next to `MelonInfo` and `MelonGame`:
+Put this in your `AssemblyInfo.cs`, next to `MelonInfo` and `MelonGame`:
 
 ```csharp
 [assembly: MelonAdditionalDependencies("FruktSharedLibrary")]
 ```
 
-MelonLoader then loads the library before your mod and tells players if it's missing.
+It makes MelonLoader load the library before your mod, and warns players who don't have it.
 
-## A complete example
+## A full example
 
-This mod adds right-click actions, a drop-down group, a mod menu page and a settings page:
+This one adds some right-click actions, a drop-down group, a mod menu page and a settings page:
 
 ```csharp
 using FruktSharedLibrary.Controls;
@@ -127,16 +121,16 @@ public class ExampleMod : MelonMod
 }
 ```
 
-In game, the mod shows up under **MODS** in the mod menu with its version and author, and both pages are listed
-inside its entry.
+In the game, the mod shows up under Mods in the mod menu with its version and author, and both of its pages are
+listed in its entry.
 
-## Things to know early
+## A few tips
 
-- **Register in `OnInitializeMelon`.** Context-menu actions, menu pages and event handlers can be added at any
-  time, but registering once at start-up keeps things simple.
-- **Wait for a map.** Most gameplay calls need `GameState.InSandbox`. Event handlers such as
-  `GameEvents.SandboxReady` are the easiest place to start work.
-- **Don't patch tiny game methods.** If you use Harmony yourself, read [IL2CPP notes](il2cpp-notes.md) first.
-  Patching an empty or trivial method in an IL2CPP game can hook hundreds of unrelated methods.
-- **Check objects before using them.** Creatures and limbs can be destroyed at any moment. Use
-  `creature.IsValid()` or `obj.Exists()` before touching something you stored earlier.
+- Do your registering in `OnInitializeMelon`. You can add menu pages, right-click actions and event handlers at
+  any time, but doing it once at start-up is simplest.
+- Most gameplay calls need a loaded map. `GameEvents.SandboxReady` is a good place to start anything that needs
+  one, and `GameState.InSandbox` tells you whether you're in one.
+- If you use Harmony yourself, read the [IL2CPP notes](il2cpp-notes.md) first. Patching a tiny or empty method
+  can end up hooking hundreds of unrelated ones.
+- Creatures and limbs can be destroyed at any moment. Before using one you stored earlier, check
+  `creature.IsValid()` or `obj.Exists()`.

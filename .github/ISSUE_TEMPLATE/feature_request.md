@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Something modders need that the library should provide
+about: Something you'd like the library to do
 labels: enhancement
 ---
 

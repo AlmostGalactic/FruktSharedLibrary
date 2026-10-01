@@ -1,41 +1,38 @@
 # FruktSharedLibrary
 
-A MelonLoader library for modding [FRUKT](https://store.steampowered.com/app/3880400/) by tripledose.
+A shared library for [FRUKT](https://store.steampowered.com/app/3880400/) mods, built on MelonLoader.
 
-FRUKT is an IL2CPP game, so mods work against generated proxy types instead of the game's real C# code, and
-several things that look like they should work crash or quietly misbehave. This library wraps the game's own
-systems in a plain C# API and deals with those problems in one place, so individual mods don't have to.
-Everything in it is checked against the running game by a built-in self-test.
+FRUKT is an IL2CPP game, which makes modding it a pain. You work with generated proxy classes, some Unity
+methods are stripped out, and a few things that look fine will crash the game or quietly do nothing.
+FruktSharedLibrary wraps the game's systems so your mod can call ordinary C# methods, and keeps the workarounds in
+one place instead of in every mod. An in-game self-test checks all of it against the real game.
 
-## What it covers
+## What's in it
 
-- **Game services and events.** Resolve any of the game's services (pause, time scale, gravity, creatures,
-  spawning, audio) and subscribe to events such as map loaded, creature died, limb detached or shot fired.
-- **World and player.** Time scale, pause, gravity, map loading and resets, the kill counter, the player's
-  camera, aiming raycasts, teleporting and cursor control.
-- **Creatures.** Find, spawn and delete creatures; read and change blood, pain and consciousness; walk limbs and
-  organs; detach limbs; reach the underlying simulation parameters.
-- **Damage and spawning.** Destroy tissue the way the game's weapons do, make explosions, and spawn firearms,
-  props and other registered objects through the game's own factory.
-- **Mod menu.** A shared in-game menu drawn in the game's style. Each mod gets an entry with its own settings
-  pages, and a MelonPreferences category can become a settings page in one call.
-- **Right-click menus.** Add actions, toggles and drop-down groups to the game's context menus for bodies, props,
-  firearms and more.
-- **Native-looking UI.** Notifications, pause-menu lines, and builders that use the game's fonts and colours.
-- **IL2CPP helpers.** Real type checks and casts, safe collection copying, destroyed-object checks, and C#
-  handlers for the game's internal events.
+- The game's services and events: map loaded, creature died, limb came off, gun fired, and so on
+- World and player control: time scale, gravity, pause, maps, the camera and aiming
+- Creatures: spawn, find, heal, kill and push them around, detach limbs, read blood and pain
+- Damage that works like the game's own weapons, and explosions
+- Spawning guns, props and anything else the game has registered
+- A mod menu styled like the game's settings screens, with an entry for every mod that uses the library
+- Your own lines in right-click menus, including drop-down groups
+- Notifications, pause-menu buttons and UI helpers that use the game's fonts and colours
+- Helpers for the IL2CPP problems that trip people up
 
 ## Installing
 
 1. Install [MelonLoader](https://melonwiki.xyz/) 0.7 or newer for FRUKT.
-2. Download `FruktSharedLibrary.dll` from the [latest release](https://github.com/AlmostGalactic/FruktSharedLibrary/releases/latest) and put it in `FRUKT/Mods`.
+2. Download `FruktSharedLibrary.dll` from the
+   [latest release](https://github.com/AlmostGalactic/FruktSharedLibrary/releases/latest) and put it in
+   `FRUKT/Mods`.
 
-Mods built on the library need it installed. In a map, press **F8** (or pick **MODS** in the pause menu) to open
-the mod menu. If FruitLib is installed too, the library's pause-menu line is called **MOD MENU** instead.
+Mods that use the library need it installed. To open the mod menu, press F8 in a map or pick MODS in the pause
+menu. If you also have FruitLib, that line is called MOD MENU instead, because FruitLib already has one called
+MODS.
 
 ## Using it in a mod
 
-Reference `FruktSharedLibrary.dll`, declare the dependency, and call the static APIs:
+Reference `FruktSharedLibrary.dll`, add the dependency attribute, and call the static classes:
 
 ```csharp
 [assembly: MelonAdditionalDependencies("FruktSharedLibrary")]
@@ -52,11 +49,11 @@ public class MyMod : MelonMod
 }
 ```
 
-[Getting started](docs/getting-started.md) covers the project setup and a complete example.
+[Getting started](docs/getting-started.md) walks through the project setup and a full example mod.
 
 ## Documentation
 
-The full documentation is in [`docs/`](docs/README.md):
+Everything is documented in [`docs/`](docs/README.md):
 
 - [Getting started](docs/getting-started.md)
 - [Core: services, events, scheduling, patching](docs/core.md)
@@ -73,17 +70,17 @@ The full documentation is in [`docs/`](docs/README.md):
 
 ## Compatibility
 
-Built and tested with MelonLoader 0.7.4 on FRUKT's Unity 6000.3 IL2CPP build. Game updates can break individual
-features; the self-test shows which ones (see [Building and testing](docs/building-and-testing.md)). It runs
-alongside FruitLib, AverysBoxOfFun, StayinAlive and UnityExplorer.
+Tested with MelonLoader 0.7.4 on the current FRUKT build (Unity 6000.3), alongside FruitLib, AverysBoxOfFun,
+StayinAlive and UnityExplorer. A game update can break parts of it; running the
+[self-test](docs/building-and-testing.md) shows which.
 
 ## Changes
 
-See [CHANGELOG.md](CHANGELOG.md) for what's in each version and what's planned.
+[CHANGELOG.md](CHANGELOG.md) lists what's in each version and what's planned.
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Help is welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

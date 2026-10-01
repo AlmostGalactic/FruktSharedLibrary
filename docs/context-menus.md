@@ -1,17 +1,17 @@
 # Right-click menus
 
-Namespace `FruktSharedLibrary.UI`. `ContextMenus` adds your own lines to the game's right-click menus. They are
-real game menu actions, so they look and behave like the built-in ones.
+`ContextMenus` (in `FruktSharedLibrary.UI`) lets you add your own lines to the game's right-click menus. They're
+real game menu actions, so they look and act just like the built-in ones.
 
-## Targets
+## Which menus
 
 | `ContextMenuTarget` | Menu |
 |---------------------|------|
-| `Limb` | Right-clicking any body part. Use this for creature actions. |
-| `Prop` | Spawned and map props. |
+| `Limb` | Right-clicking any body part. Use this one for anything to do with creatures. |
+| `Prop` | Props, whether spawned or part of the map. |
 | `Firearm` | Guns. |
-| `HumanSpawner` | The human spawner device. |
-| `Spinner` | The map's spinner. |
+| `HumanSpawner` | The human spawner. |
+| `Spinner` | The spinner on the map. |
 
 ## Actions
 
@@ -23,40 +23,41 @@ ContextMenus.AddAction(ContextMenuTarget.Firearm, "Empty magazine", ctx => Empty
 
 | Method | Description |
 |--------|-------------|
-| `AddAction(target, label, onClick, showIf = null, priority = 500)` | A line on one kind of menu. `onClick` gets a `ContextMenuContext`. |
-| `AddAction(target, ctx => label, onClick, ...)` | The same with a label computed per object (when the menu is built, and after each click). |
-| `AddLimbAction(label, limb => ..., showIf, priority)` | Shorthand for limb menus. |
-| `AddCreatureAction(label, creature => ..., showIf, priority)` | Shorthand for the creature that owns the clicked limb. Skipped for objects that aren't valid creatures. |
-| `AddToggle(target, label, getState, setState, showIf, priority)` | An on/off line ("Label: ON"). Clicking flips it and keeps the menu open, like the game's own switches. |
-| `RemoveAll()` | Removes every action that any mod added. Mostly useful in tests. |
+| `AddAction(target, label, onClick, showIf = null, priority = 500)` | Adds a line to one kind of menu. `onClick` gets a `ContextMenuContext`. |
+| `AddAction(target, ctx => label, onClick, ...)` | The same, but the label is worked out per object, when its menu is built and again after each click. |
+| `AddLimbAction(label, limb => ..., showIf, priority)` | A shortcut for limb menus. |
+| `AddCreatureAction(label, creature => ..., showIf, priority)` | A shortcut that hands you the creature the clicked limb belongs to. It isn't added to things that aren't a proper creature. |
+| `AddToggle(target, label, getState, setState, showIf, priority)` | An on/off line that reads "Label: ON". Clicking it flips it and leaves the menu open, like the game's own switches. |
+| `RemoveAll()` | Removes everything every mod has added. Mainly for testing. |
 
-Every `Add` method returns a `ContextMenuEntry`; call `entry.Remove()` to take it out of every menu again.
+Each `Add` method gives you back a `ContextMenuEntry`. Call `entry.Remove()` on it to take the line out of every
+menu again.
 
-Clicking a normal action runs it and closes the menu, like the built-in actions.
+A normal action runs when clicked and then closes the menu, the same as the game's actions.
 
-### What the context gives you
+### The context
 
-`ContextMenuContext` describes the object the menu belongs to. Only the field matching `Target` is set:
-`Limb` (and `Creature`, read live from the limb), `Prop`, `Firearm`, `Spawner` or `Spinner`. `Handler` is the
-game's menu component and `GameObject` its object.
+`ContextMenuContext` tells you what the menu is for. Only the field that matches `Target` is filled in: `Limb`
+(along with `Creature`, which is looked up from the limb when you read it), `Prop`, `Firearm`, `Spawner` or
+`Spinner`. You also get `Handler`, the game's menu component, and `GameObject`.
 
-### When `showIf` runs
+### When `showIf` is checked
 
-Objects build their right-click menu **when they spawn**, not when the menu opens, so `showIf` runs once per object
-at that point. For objects that already exist when you register an action, it runs at registration. Use it to
-decide whether a kind of object gets the line at all (for example humans only). To react to changing state, have
-the action check its own conditions when clicked, or use a computed label.
+Things build their right-click menu when they spawn, not when you open it. So `showIf` is checked once per
+object, at spawn time, or at the moment you register the action for things that already exist. Use it to decide
+whether a kind of object should have the line at all, like "humans only". If you need to react to something that
+changes, check it inside the action when it's clicked, or use a label that's worked out per object.
 
 ### Order
 
-Lines are sorted by priority, highest first. The game's own actions use 995 to 1000, so the default of 500 puts
-yours below them. A priority above 1000 puts a line above them.
+Lines are sorted by priority, highest at the top. The game's own actions use 995 to 1000, so the default of 500
+puts yours underneath them. Use more than 1000 to go above.
 
 ## Drop-down groups
 
-A group is one line, such as `+ MY MOD`, that expands in place when clicked to show its own lines indented
-underneath. The menu stays open. Clicking it again collapses it, and every group is collapsed again whenever the
-menu closes. Groups can contain groups.
+A group is a single line, like `+ MY MOD`. Clicking it opens it up right there, with its own lines indented
+underneath, and the menu stays open. Clicking it again closes it, and all groups close up when the menu does.
+You can put groups inside groups.
 
 ```csharp
 var tools = ContextMenus.AddCreatureGroup("My Mod")
@@ -72,16 +73,17 @@ tools.AddGroup("Throw")
 |--------|-------------|
 | `ContextMenus.AddGroup(target, label, showIf = null, priority = 500)` | A group on any kind of menu. |
 | `ContextMenus.AddCreatureGroup(label, showIf, priority)` | A group on creature (limb) menus. |
-| `group.AddAction(label, onClick, showIf)` | A line inside the group. Runs and closes the menu. |
-| `group.AddToggle(label, getState, setState, showIf)` | An on/off line inside the group. Keeps the menu open. |
-| `group.AddCreatureAction(...)`, `group.AddLimbAction(...)` | Shorthands, for groups on `Limb` menus only. |
-| `group.AddGroup(label, showIf)` | A nested group. Returns the **new** group. |
-| `group.Remove()` | Removes the group and everything in it. |
+| `group.AddAction(label, onClick, showIf)` | A line inside the group. It runs and closes the menu. |
+| `group.AddToggle(label, getState, setState, showIf)` | An on/off line inside the group. The menu stays open. |
+| `group.AddCreatureAction(...)`, `group.AddLimbAction(...)` | Shortcuts, only for groups on `Limb` menus. |
+| `group.AddGroup(label, showIf)` | A group inside this one. |
+| `group.Remove()` | Takes out the group and everything in it. |
 
-Like `AddSubPage` in the mod menu, `AddGroup` returns the new nested group while the other methods return the group
-you called them on. Keep a reference if you want to add more lines to the outer group afterwards.
+`AddGroup` gives you the new inner group, while the other methods give you back the group you called them on.
+That's the same as `AddSubPage` in the mod menu. If you want to add more lines to the outer group afterwards,
+keep a reference to it, like `tools` above.
 
-## Adding and removing at any time
+## Adding and removing later
 
-Actions and groups can be added or removed whenever you like. The library also inserts them into menus of objects
-that already exist, and removes them from those menus again.
+You can add or remove actions and groups whenever you want. Things that already exist in the world get the change
+too, not just new ones.
