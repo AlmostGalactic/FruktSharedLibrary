@@ -28,7 +28,7 @@ Everything in it is checked against the running game by a built-in self-test.
 ## Installing
 
 1. Install [MelonLoader](https://melonwiki.xyz/) 0.7 or newer for FRUKT.
-2. Put `FruktSharedLibrary.dll` in `FRUKT/Mods`.
+2. Download `FruktSharedLibrary.dll` from the [latest release](https://github.com/AlmostGalactic/FruktSharedLibrary/releases/latest) and put it in `FRUKT/Mods`.
 
 Mods built on the library need it installed. In a map, press **F8** (or pick **MODS** in the pause menu) to open
 the mod menu. If FruitLib is installed too, the library's pause-menu line is called **MOD MENU** instead.
@@ -76,6 +76,10 @@ The full documentation is in [`docs/`](docs/README.md):
 Built and tested with MelonLoader 0.7.4 on FRUKT's Unity 6000.3 IL2CPP build. Game updates can break individual
 features; the self-test shows which ones (see [Building and testing](docs/building-and-testing.md)). It runs
 alongside FruitLib, AverysBoxOfFun, StayinAlive and UnityExplorer.
+
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md) for what's in each version and what's planned.
 
 ## Contributing
 
