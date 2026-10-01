@@ -64,7 +64,7 @@ namespace FruktSharedLibrary.Internal
                     yield break;
                 yield return Wait(1f);
                 Check("Native menu lists the pages", NativeModMenu.RowCount >= 2, NativeModMenu.RowCount + " rows");
-                Check("The open sound is cut short like the game's (not its full 2 s)",
+                Check("The menu doesn't play the long ticking window sound",
                     !Gameplay.Sounds.IsPlaying(Il2CppInfrastructure.Project.AssetsHandlers.SFX.UISFXType.WindowOpenClose));
                 Shot("menu-root");
                 yield return Wait(1.5f);

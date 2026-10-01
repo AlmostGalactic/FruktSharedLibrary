@@ -116,8 +116,9 @@ namespace FruktSharedLibrary.UI
             PlayWindowSound();
         }
 
-        // The clip is a two-second run of ticks; the game only plays its start while a screen wipes.
-        private static void PlayWindowSound() => Sounds.PlayFor(UISFXType.WindowOpenClose, 0.3f, 0.6f);
+        // One click. (The game's WindowOpenClose clip is a two-second run of ticks it only plays during screen
+        // wipes; even cut short it ticks several times.)
+        private static void PlayWindowSound() => Sounds.Play(UISFXType.SmallButtonClick, 0.7f);
 
         /// <summary>Esc behaviour: cancel key capture, leave a page, or close.</summary>
         internal static void Back()
