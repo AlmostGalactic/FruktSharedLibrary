@@ -24,6 +24,8 @@ namespace FruktSharedLibrary
             FruktLog.Initialize(LoggerInstance);
             FruktConfig.Initialize();
             LibraryPatches.Apply(HarmonyInstance);
+            PauseMenu.Initialize();
+            ModMenu.Initialize();
             BuiltInMenu.Register();
             Scheduler.Every(10f, ContextMenuCarrier.Cleanup);
             SelfTest.Initialize();
@@ -42,6 +44,7 @@ namespace FruktSharedLibrary
             GameFlow.Update();
             CreatureTracker.Update();
             ModMenu.Update();
+            PauseMenu.Update();
             GameEvents.RaiseUpdate();
         }
 

@@ -68,6 +68,43 @@ namespace FruktSharedLibrary.Controls
         }
 
         /// <summary>
+        /// The first key pressed this frame (for "press a key to bind" prompts). Modifier keys are skipped
+        /// unless <paramref name="includeModifiers"/> is set, so Ctrl+K reports K.
+        /// </summary>
+        public static bool TryGetPressedKey(out Key key, bool includeModifiers = false)
+        {
+            key = Key.None;
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return false;
+            foreach (var candidate in AllKeys)
+            {
+                if (!includeModifiers && IsModifier(candidate))
+                    continue;
+                try
+                {
+                    var control = keyboard[candidate];
+                    if (control == null || !control.wasPressedThisFrame)
+                        continue;
+                }
+                catch
+                {
+                    continue; // Keys this keyboard layout doesn't have.
+                }
+                key = candidate;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>True for Ctrl, Shift, Alt and the Windows/Command keys.</summary>
+        public static bool IsModifier(Key key)
+            => key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt
+                or Key.LeftMeta or Key.RightMeta;
+
+        private static readonly Key[] AllKeys = Array.FindAll((Key[])Enum.GetValues(typeof(Key)), k => k != Key.None && k != Key.IMESelected);
+
+        /// <summary>
         /// Parses a key name. Accepts Input System names (F8, Insert, Digit1, Numpad0, LeftCtrl) plus a few
         /// friendly aliases ("1", "Ctrl", "Shift", "Alt", "Esc", "Del", "PgUp").
         /// </summary>

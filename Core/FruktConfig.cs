@@ -14,6 +14,7 @@ namespace FruktSharedLibrary.Core
         private static MelonPreferences_Entry<bool> _showNotifications;
         private static MelonPreferences_Entry<bool> _builtInMenuPage;
         private static MelonPreferences_Entry<bool> _nativeStyle;
+        private static MelonPreferences_Entry<bool> _pauseMenuButton;
 
         internal static void Initialize()
         {
@@ -26,6 +27,8 @@ namespace FruktSharedLibrary.Core
                 "Show on-screen notifications posted by mods.");
             _nativeStyle = _category.CreateEntry("NativeStyle", true, "Native-style menu",
                 "Draw the mod menu in FRUKT's own style (falls back to a simple menu if that fails).");
+            _pauseMenuButton = _category.CreateEntry("PauseMenuButton", true, "Pause menu button",
+                "Adds a line to the game's pause menu that opens the mod menu.");
             _builtInMenuPage = _category.CreateEntry("BuiltInMenuPage", true, "Built-in sandbox tools page",
                 "Adds the library's own sandbox tools page to the mod menu.");
         }
@@ -51,5 +54,7 @@ namespace FruktSharedLibrary.Core
         public static bool BuiltInMenuPage => _builtInMenuPage?.Value ?? true;
 
         public static bool NativeStyle => _nativeStyle?.Value ?? true;
+
+        public static bool PauseMenuButton => _pauseMenuButton?.Value ?? true;
     }
 }

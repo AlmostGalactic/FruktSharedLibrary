@@ -187,6 +187,46 @@ namespace FruktSharedLibrary.UI
                 ? $"> {word.ToUpperInvariant()}_"
                 : $"<alpha=#00>> <alpha=#FF>{word.ToUpperInvariant()}<alpha=#00>_";
 
+        /// <summary>
+        /// Copies a piece of the game's own UI (a button, a row, a whole screen) under <paramref name="parent"/>.
+        /// The copy is made while inactive and given the original's core services, so the game's components on
+        /// it (hover animations, click events) work. Returns null if copying failed.
+        /// </summary>
+        public static GameObject CloneGameUi(GameObject prototype, Transform parent, string name)
+        {
+            if (prototype == null || parent == null)
+                return null;
+            var crib = new GameObject("FruktSharedLibrary.Crib");
+            crib.SetActive(false);
+            try
+            {
+                var copy = UnityEngine.Object.Instantiate(prototype, crib.transform, false);
+                copy.name = name;
+                var source = prototype.GetComponentInChildren<Il2CppInfrastructure.Components.ManagedBehaviours.ManagedBehaviour>(true);
+                var provider = source?.m_coreServicesProvider;
+                if (provider != null)
+                {
+                    foreach (var behaviour in copy.GetComponentsInChildren<Il2CppInfrastructure.Components.ManagedBehaviours.ManagedBehaviour>(true))
+                        behaviour.m_coreServicesProvider = provider;
+                }
+                else
+                {
+                    Core.GameServices.Inject(copy);
+                }
+                copy.transform.SetParent(parent, false);
+                return copy;
+            }
+            catch (Exception e)
+            {
+                Core.FruktLog.Warning($"Copying the game's '{prototype.name}' UI failed: {e.Message}");
+                return null;
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(crib);
+            }
+        }
+
         internal static void Destroy(UnityEngine.Object obj)
         {
             if (obj == null)

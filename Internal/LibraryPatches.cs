@@ -11,6 +11,7 @@ using Il2CppLVA.LimbContextMenu;
 using Il2CppLVA.LimbContextMenu.Actions;
 using Il2CppLVA.Limbs;
 using Il2CppMap.Spinner;
+using Il2CppPlayer.GameplayInput.ButtonsActions.MouseKeyboard;
 using Il2CppSpawnables.ContextMenus;
 using Il2CppSpawnables.Weapons;
 
@@ -49,6 +50,10 @@ namespace FruktSharedLibrary.Internal
             Patch(typeof(NPCSpawnerContextMenuActionsHandler), nameof(NPCSpawnerContextMenuActionsHandler.InitializeContextActions), Type.EmptyTypes, postfix: nameof(SpawnerMenu));
             Patch(typeof(SpinnerContextMenuActionsHandler), nameof(SpinnerContextMenuActionsHandler.InitializeContextActions), Type.EmptyTypes, postfix: nameof(SpinnerMenu));
             Patch(typeof(DeleteCreatureContextMenuAction), nameof(DeleteCreatureContextMenuAction.ExecuteLogic), Type.EmptyTypes, prefix: nameof(CarrierExecute));
+
+            // Esc belongs to the mod menu while it is open (the pause button ignores the input block).
+            Patch(typeof(PauseToggleButton), "OnPressInternal", Type.EmptyTypes, prefix: nameof(PauseButtonPressed));
+            Patch(typeof(MenuBackButton), "OnPressInternal", Type.EmptyTypes, prefix: nameof(MenuBackPressed));
 
             FruktLog.Msg($"Game hooks: {ok}/{total} applied.");
             Status = (ok, total);
@@ -141,6 +146,12 @@ namespace FruktSharedLibrary.Internal
                 return true;
             }
         }
+
+        private static bool PauseButtonPressed(PauseToggleButton __instance)
+            => !Expect<PauseToggleButton>(__instance, nameof(PauseButtonPressed)) || !UI.ModMenu.OwnsEscape;
+
+        private static bool MenuBackPressed(MenuBackButton __instance)
+            => !Expect<MenuBackButton>(__instance, nameof(MenuBackPressed)) || !UI.ModMenu.OwnsEscape;
 
         /// <summary>Calls and wrong-instance calls per hook (diagnostics for IL2CPP code folding).</summary>
         internal static readonly System.Collections.Generic.Dictionary<string, (int Calls, int Foreign)> HookStats = new();

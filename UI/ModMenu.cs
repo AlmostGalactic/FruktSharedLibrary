@@ -26,6 +26,7 @@ namespace FruktSharedLibrary.UI
         private static int _selected;
         private static float _scroll;
         private static float _contentHeight;
+        private static ModMenuItem _capturing;
         private static KeyBind _keyBind;
         private static string _keyBindText;
         private static bool _sliderBroken;
@@ -37,6 +38,20 @@ namespace FruktSharedLibrary.UI
         internal static bool DrawFailed => _drawFailed;
 
         internal static int DrawCount { get; private set; }
+
+        /// <summary>
+        /// True while Esc belongs to the menu: when it is open, and on the frame it closed (so the Esc that
+        /// closed it doesn't also open the game's pause menu).
+        /// </summary>
+        internal static bool OwnsEscape => IsOpen || Time.frameCount - _closedFrame <= 1;
+
+        private static int _closedFrame = -10;
+
+        /// <summary>True while the native (uGUI) menu is the one shown.</summary>
+        internal static bool IsNative => IsOpen && _native;
+
+        /// <summary>Self-test switch: open the simple IMGUI menu even when the native one is available.</summary>
+        internal static bool ForceSimple { get; set; }
 
         /// <summary>Raised when the menu opens (true) or closes (false).</summary>
         public static event Action<bool> OpenChanged;
@@ -78,17 +93,49 @@ namespace FruktSharedLibrary.UI
 
         public static void Toggle() => SetOpen(!IsOpen);
 
+        /// <summary>The pause-menu line that opens this menu (null when turned off in the preferences).</summary>
+        internal static PauseMenu.Entry PauseEntry { get; private set; }
+
+        internal static void Initialize()
+        {
+            if (!FruktConfig.PauseMenuButton)
+                return;
+            var entry = PauseEntry = PauseMenu.AddButton("Mods", Open);
+            // FruitLib adds its own MODS line; use a different word so the two can be told apart.
+            GameEvents.SandboxReady += _ =>
+            {
+                bool fruitLib = MelonLoader.MelonBase.RegisteredMelons.Any(m => m.Info.Name == "FruitLib");
+                entry.SetLabel(fruitLib ? "Mod menu" : "Mods");
+            };
+        }
+
         internal static void Update()
         {
             if (_native && NativeModMenu.Failed)
                 _native = false;
             if (_native)
             {
-                if (!NativeModMenu.CapturingKey && FruktInput.GetKeyDown(Key.Escape))
+                // A key pressed while a binding row is listening belongs to that row, not to the menu.
+                bool capturing = NativeModMenu.CapturingKey;
+                if (!capturing && FruktInput.GetKeyDown(Key.Escape))
                     NativeModMenu.Back();
                 NativeModMenu.Update();
-                if (!NativeModMenu.CapturingKey && ToggleKey.WasPressed())
+                if (!capturing && IsOpen && ToggleKey.WasPressed())
                     Close();
+                return;
+            }
+            if (_capturing != null)
+            {
+                if (FruktInput.TryGetPressedKey(out var key))
+                {
+                    var item = _capturing;
+                    _capturing = null;
+                    if (key != Key.Escape)
+                    {
+                        var bind = key == Key.Backspace ? null : new KeyBind(key, FruktInput.CtrlHeld, FruktInput.ShiftHeld, FruktInput.AltHeld);
+                        Invoke(item, () => item.SetKey(bind));
+                    }
+                }
                 return;
             }
             if (ToggleKey.WasPressed())
@@ -108,14 +155,16 @@ namespace FruktSharedLibrary.UI
             if (IsOpen == open)
                 return;
             IsOpen = open;
+            _capturing = null;
             _cursorOwner ??= new Il2CppSystem.Object();
             if (open)
             {
                 LocalPlayer.CaptureCursor(_cursorOwner);
-                _native = FruktConfig.NativeStyle && NativeModMenu.Open(GameState.InSandbox ? "pause" : "frukt");
+                _native = FruktConfig.NativeStyle && !ForceSimple && NativeModMenu.Open(GameState.InSandbox ? "pause" : "frukt");
             }
             else
             {
+                _closedFrame = Time.frameCount;
                 LocalPlayer.ReleaseCursor(_cursorOwner);
                 NativeModMenu.Close();
                 _native = false;
@@ -220,7 +269,14 @@ namespace FruktSharedLibrary.UI
             {
                 if (!item.IsVisible)
                     continue;
-                float itemHeight = item.Kind switch { ModMenuItemKind.Slider => 44f, ModMenuItemKind.Button => 30f, ModMenuItemKind.Separator => 10f, ModMenuItemKind.Label => 22f, _ => 26f };
+                float itemHeight = item.Kind switch
+                {
+                    ModMenuItemKind.Slider or ModMenuItemKind.Choice => 44f,
+                    ModMenuItemKind.Button => 30f,
+                    ModMenuItemKind.Separator => 10f,
+                    ModMenuItemKind.Label => 22f,
+                    _ => 26f,
+                };
                 var rect = new Rect(0f, y, width, itemHeight);
                 try
                 {
@@ -231,6 +287,11 @@ namespace FruktSharedLibrary.UI
                     GUI.Label(rect, $"<color=#ff7070>error: {e.Message}</color>", GuiStyles.Label);
                 }
                 y += itemHeight + 4f;
+                if (!string.IsNullOrEmpty(item.Tooltip))
+                {
+                    GUI.Label(new Rect(0f, y - 2f, width, 18f), $"<size=11><color=#9a9a9a>{item.Tooltip}</color></size>", GuiStyles.Label);
+                    y += 18f;
+                }
             }
             return y - startY;
         }
@@ -268,6 +329,33 @@ namespace FruktSharedLibrary.UI
                 case ModMenuItemKind.Slider:
                     DrawSlider(item, rect);
                     break;
+
+                case ModMenuItemKind.Choice:
+                {
+                    GUI.Label(new Rect(rect.x, rect.y, rect.width, 20f), item.SafeText, GuiStyles.Label);
+                    int chosen = item.GetInt();
+                    float optionWidth = rect.width / Math.Max(1, item.Options.Count);
+                    for (int i = 0; i < item.Options.Count; i++)
+                    {
+                        var option = new Rect(rect.x + i * optionWidth, rect.y + 20f, optionWidth - 4f, 22f);
+                        if (i == chosen)
+                            GUI.DrawTexture(new Rect(option.x, option.yMax - 2f, option.width, 2f), GuiStyles.Accent);
+                        int index = i;
+                        if (GUI.Button(option, i == chosen ? $"<b>{item.Options[i]}</b>" : item.Options[i], GuiStyles.Button) && i != chosen)
+                            Invoke(item, () => item.SetInt(index));
+                    }
+                    break;
+                }
+
+                case ModMenuItemKind.KeyBinding:
+                {
+                    var bind = item.GetKey();
+                    string key = _capturing == item ? "press a key..." : bind?.ToString() ?? "none";
+                    GUI.Label(new Rect(rect.x, rect.y, rect.width - 130f, rect.height), item.SafeText, GuiStyles.Label);
+                    if (GUI.Button(new Rect(rect.xMax - 126f, rect.y, 126f, rect.height), key, GuiStyles.Button))
+                        _capturing = item;
+                    break;
+                }
             }
         }
 

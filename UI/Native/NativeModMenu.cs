@@ -23,7 +23,7 @@ namespace FruktSharedLibrary.UI
         private const float ControlX = Left + 628f;
         private const float RowWidth = 1300f;
         private const float ViewTop = 330f;
-        private const float ViewBottom = 905f;
+        private const float ViewBottom = 860f;
         private const float RowHeight = 72f;
         private const float RowGap = 22f;
         private const float LabelSize = 40f;
@@ -561,42 +561,16 @@ namespace FruktSharedLibrary.UI
 
         private static void HandleKeyCapture()
         {
-            if (_capturing == null)
+            if (_capturing == null || !FruktInput.TryGetPressedKey(out var key))
                 return;
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-                return;
-            foreach (Key key in Enum.GetValues(typeof(Key)))
-            {
-                if (key == Key.None || key == Key.IMESelected || IsModifier(key))
-                    continue;
-                bool down;
-                try
-                {
-                    var control = keyboard[key];
-                    down = control != null && control.wasPressedThisFrame;
-                }
-                catch
-                {
-                    continue;
-                }
-                if (!down)
-                    continue;
-
-                var item = _capturing.Item;
-                _capturing = null;
-                if (key == Key.Escape)
-                    return; // Escape cancels.
-                var bind = key == Key.Backspace ? null : new KeyBind(key, FruktInput.CtrlHeld, FruktInput.ShiftHeld, FruktInput.AltHeld);
-                Invoke(item, () => item.SetKey(bind));
-                Sounds.Play(UISFXType.SwitchOn, 0.8f);
-                return;
-            }
+            var item = _capturing.Item;
+            _capturing = null;
+            if (key == Key.Escape)
+                return; // Escape cancels.
+            var bind = key == Key.Backspace ? null : new KeyBind(key, FruktInput.CtrlHeld, FruktInput.ShiftHeld, FruktInput.AltHeld);
+            Invoke(item, () => item.SetKey(bind));
+            Sounds.Play(UISFXType.SwitchOn, 0.8f);
         }
-
-        private static bool IsModifier(Key key)
-            => key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt
-                or Key.LeftMeta or Key.RightMeta;
 
         private static void HandleScroll()
         {
@@ -615,8 +589,48 @@ namespace FruktSharedLibrary.UI
                 _content.anchoredPosition = new Vector2(0f, _scroll);
         }
 
-        /// <summary>Esc while this menu has focus; returns true when the key was consumed.</summary>
+        /// <summary>True while a key-binding row waits for a key press.</summary>
         internal static bool CapturingKey => _capturing != null;
+
+        // ------------------------------------------------------------ self-test access
+
+        internal static ModMenuPage CurrentPage => _page;
+
+        internal static float ScrollOffset => _scroll;
+
+        internal static int RowCount => Rows.Count;
+
+        internal static RectTransform EscChip => _escChip;
+
+        internal static void ShowPage(ModMenuPage page)
+        {
+            _page = page;
+            _scroll = 0f;
+            _layoutSignature = null;
+            Update();
+        }
+
+        /// <summary>Scrolls so the row of <paramref name="item"/> sits at the top of the view.</summary>
+        internal static void ScrollTo(ModMenuItem item)
+        {
+            var row = Rows.Find(r => r.Item == item);
+            if (row == null)
+                return;
+            _scroll = -row.Rect.anchoredPosition.y;
+            ClampScroll();
+        }
+
+        internal static RectTransform HitForPage(ModMenuPage page) => Rows.Find(r => r.TargetPage == page)?.Hit;
+
+        internal static RectTransform HitFor(ModMenuItem item) => Rows.Find(r => r.Item == item)?.Hit;
+
+        internal static RectTransform TrackFor(ModMenuItem item) => Rows.Find(r => r.Item == item)?.Track;
+
+        internal static RectTransform OptionFor(ModMenuItem item, int index)
+        {
+            var row = Rows.Find(r => r.Item == item);
+            return row != null && index >= 0 && index < row.Options.Count ? row.Options[index].Rect : null;
+        }
 
         // ------------------------------------------------------------ helpers
 

@@ -39,7 +39,7 @@ namespace FruktSharedLibrary.Internal
     /// Loads a map, exercises every API against the live game and writes a PASS/FAIL report to
     /// <c>UserData/FruktSharedLibrary.selftest.log</c>.
     /// </summary>
-    internal static class SelfTest
+    internal static partial class SelfTest
     {
         private static readonly List<string> Report = new();
         private static int _passed;
@@ -449,18 +449,28 @@ namespace FruktSharedLibrary.Internal
             {
                 Notifications.Show("FruktSharedLibrary self-test notification", 8f);
                 Notifications.Warn("A warning-style notification", 8f);
-                ModMenu.Open();
             });
-            int drawsBefore = ModMenu.DrawCount;
-            for (float end = Now() + 1.5f; Now() < end;) yield return null;
-            Section("Mod menu screenshot", () => FruktLog.Msg("[SelfTest] SCREENSHOT modmenu"));
-            for (float end = Now() + 2.5f; Now() < end;) yield return null;
-            Section("UI (deferred)", () =>
+            for (float end = Now() + 1f; Now() < end;) yield return null;
+            Section("UI (deferred)", () => Check("Notifications drew without errors", !Notifications.DrawFailed));
+            var menuTest = TestModMenu();
+            while (true)
             {
-                Check("ModMenu drew without errors", ModMenu.DrawCount > drawsBefore && !ModMenu.DrawFailed, $"{ModMenu.DrawCount - drawsBefore} draws");
-                Check("Notifications drew without errors", !Notifications.DrawFailed);
-                ModMenu.Close();
-            });
+                bool more;
+                try
+                {
+                    more = menuTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Mod menu test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return menuTest.Current;
+            }
+            ModMenu.ForceSimple = false;
+            ModMenu.Close();
             for (float end = Now() + 0.5f; Now() < end;) yield return null;
 
             Section("Return to menu", () => Check("World.ReturnToMainMenu()", World.ReturnToMainMenu()));
