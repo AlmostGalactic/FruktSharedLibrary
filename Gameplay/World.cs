@@ -170,7 +170,7 @@ namespace FruktSharedLibrary.Gameplay
         /// <summary>The loaded map, or null outside of the sandbox.</summary>
         public static MapID? CurrentMap => GameState.CurrentMap;
 
-        /// <summary>Display name of a map ("YARD", "FLATLAND"...).</summary>
+        /// <summary>Display name of a map as the game shows it (MapID.Yard is "SPIRE", MapID.Flatland is "HOMESTEAD").</summary>
         public static string GetMapDisplayName(MapID map)
         {
             try

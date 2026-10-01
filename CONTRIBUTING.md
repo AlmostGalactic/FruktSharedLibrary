@@ -24,11 +24,11 @@ which is also why there is no CI build: it needs your local game install.
   for game objects, XML docs on everything public, and no exceptions thrown into the game. Wrap callbacks
   from mods in try/catch and log with `FruktLog`.
 - Keep game-specific workarounds inside the library. Mod authors shouldn't need to know about IL2CPP.
-- Public API changes need a line in the README's API overview.
+- Public API changes need to be documented on the matching page in [`docs/`](docs/README.md).
 
-### Before touching game types, read the IL2CPP traps
+### Before touching game types, read the IL2CPP notes
 
-The README lists them. The ones that bite most often:
+[docs/il2cpp-notes.md](docs/il2cpp-notes.md) lists them. The ones that bite most often:
 
 - **Don't Harmony-patch tiny or empty methods.** IL2CPP merges identical native code, so the patch hooks
   unrelated methods too. Add new hooks to `Internal/LibraryPatches.cs` with an `Expect<T>` guard.
