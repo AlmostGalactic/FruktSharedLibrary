@@ -15,16 +15,21 @@ against the live game by an automated in-game self-test (115/115 checks).
 
 Copy `FruktSharedLibrary.dll` into `FRUKT/Mods`. Mods that depend on it need it installed.
 
-In a map, press **F8** to open the mod menu. It includes a *Sandbox Tools* page with time scale, gravity,
-spawning, and actions for the creature under your crosshair. The key and the built-in page can be changed in
-`UserData/MelonPreferences.cfg` under `[FruktSharedLibrary]`:
+In a map, press **F8** or pick **MODS** in the pause menu to open the mod menu. It looks like the game's
+own settings screens, and every mod that uses the library can add a page to it. It includes a *Sandbox Tools*
+page with time scale, gravity, spawning, and actions for the creature under your crosshair. When FruitLib is
+also installed, its pause-menu line is already called MODS, so the library's line is called **MOD MENU**.
 
-| Preference          | Default | Meaning                                   |
-|---------------------|---------|-------------------------------------------|
-| `ModMenuKey`        | `F8`    | Key that toggles the menu (`Ctrl+M` etc.) |
-| `ShowNotifications` | `true`  | On-screen notifications from mods         |
-| `BuiltInMenuPage`   | `true`  | The library's own *Sandbox Tools* page    |
-| `DebugLogging`      | `false` | Extra diagnostic lines in the console     |
+The menu can be changed in `UserData/MelonPreferences.cfg` under `[FruktSharedLibrary]`:
+
+| Preference          | Default | Meaning                                                        |
+|---------------------|---------|----------------------------------------------------------------|
+| `ModMenuKey`        | `F8`    | Key that toggles the menu (`Ctrl+M` etc.)                      |
+| `PauseMenuButton`   | `true`  | Adds the mod menu line to the game's pause menu                |
+| `NativeStyle`       | `true`  | FRUKT-style menu and notifications (`false` = simple overlay)  |
+| `ShowNotifications` | `true`  | On-screen notifications from mods                              |
+| `BuiltInMenuPage`   | `true`  | The library's own *Sandbox Tools* page                         |
+| `DebugLogging`      | `false` | Extra diagnostic lines in the console                          |
 
 ---
 
@@ -48,6 +53,7 @@ In your mod's `.csproj` (SDK style, `net6.0`):
   <Reference Include="$(FruktGameDir)\MelonLoader\Il2CppAssemblies\Il2Cppmscorlib.dll" Private="false" />
   <Reference Include="$(FruktGameDir)\MelonLoader\Il2CppAssemblies\UnityEngine.CoreModule.dll" Private="false" />
   <Reference Include="$(FruktGameDir)\MelonLoader\Il2CppAssemblies\UnityEngine.PhysicsModule.dll" Private="false" />
+  <Reference Include="$(FruktGameDir)\MelonLoader\Il2CppAssemblies\Unity.InputSystem.dll" Private="false" />
 </ItemGroup>
 ```
 
@@ -62,6 +68,7 @@ In your `AssemblyInfo.cs`, make MelonLoader load the library first:
 ### 2. A complete example mod
 
 ```csharp
+using FruktSharedLibrary.Controls;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Entities;
 using FruktSharedLibrary.Gameplay;
@@ -70,10 +77,13 @@ using FruktSharedLibrary.UI;
 using Il2CppLVA.NodesHierarchy.Benchmark.Variants; // HumanoidNodeTagValue
 using MelonLoader;
 using UnityEngine;
+using UnityEngine.InputSystem; // Key
 
 public class ExampleMod : MelonMod
 {
     private bool _lowGravity;
+    private int _blood;
+    private KeyBind _panicKey = new KeyBind(Key.P);
 
     public override void OnInitializeMelon()
     {
@@ -86,14 +96,17 @@ public class ExampleMod : MelonMod
         ContextMenus.AddCreatureAction("Launch", creature => creature.AddForce(Vector3.up * 800f));
         ContextMenus.AddLimbAction("Pop", limb => limb.Damage(limb.transform.position, 6));
 
-        // A page in the shared mod menu (F8)
+        // A page in the shared mod menu (F8, or MODS in the pause menu)
         ModMenu.AddPage("Example")
             .Header("Fun")
             .Toggle("Moon gravity", () => _lowGravity, on =>
             {
                 _lowGravity = on;
                 World.GravityStrength = on ? 1.62f : 9.81f;
-            })
+            }).WithTooltip("Gravity of the Moon: 1.62 m/s².")
+            .Slider("Time scale", 0.05f, 1f, () => World.TimeScale, v => World.TimeScale = v)
+            .Choice("Blood", new[] { "normal", "lots", "none" }, () => _blood, i => _blood = i)
+            .KeyBinding("Panic key", () => _panicKey, key => _panicKey = key)
             .Button("Spawn a human", () => Creatures.SpawnHumanInFront())
             .Button("Spawn a shotgun", () => Spawner.SpawnFirearmInFront(FirearmType.Grist03))
             .Button("Behead the closest human", () =>
@@ -152,14 +165,17 @@ variants, `GetRegisteredPrefabIds()`, `GetPrefabIds<T>()`, `GetPropNames()`, `Ge
 | Type | What it does |
 |------|--------------|
 | `ContextMenus` | Adds actions to the game's own right-click menus: `AddCreatureAction`, `AddLimbAction`, `AddAction(ContextMenuTarget, ...)` for props, firearms, the human spawner and spinners, and `AddToggle` (label shows ON/OFF). Actions can be added or removed at any time, including for objects that already exist. Priority: higher numbers are listed first (built-in actions use 995-1000). |
-| `ModMenu` | The shared F8 menu. `AddPage(title)` returns a builder with `Header`, `Label`, `Button`, `Toggle`, `Slider`, `Separator`, `OnlyWhen`. |
-| `Notifications` | `Show(text, seconds)`, `Warn(text)`. |
-| `GuiStyles` | The library's IMGUI styles, if you draw your own overlay. |
+| `ModMenu` | The shared mod menu, drawn in the game's own style. `AddPage(title)` returns a builder with `Header`, `Label` (fixed or live text), `Button`, `Toggle`, `Slider` (float or int), `Choice` (list of words or any enum), `KeyBinding` (click, then press a key), `Separator`, plus `OnlyWhen(condition)` and `WithTooltip(text)` for the item just added. `Open`/`Close`/`IsOpen`/`OpenChanged`. |
+| `PauseMenu` | `AddButton(label, onClick)` adds a real copy of the game's pause-menu line (same font, hover and animation). The returned entry has `SetLabel` and `VisibleWhen`. |
+| `Notifications` | `Show(text, seconds)`, `Show(text, color)`, `Warn(text)`: plates in the top-right corner, styled like the game. |
+| `FruktTheme` | The game's palette (`Background`, `Text`, `Muted`, `Dim`, `Line`, `Accent`, `Frame`), fonts (`DisplayFont` = GNF, `MonoFont` = Departure Mono) and `BorderSprite`. |
+| `FruktUi` | Builders for native-looking Unity UI: `CreateCanvas`, `CreatePanel`, `CreateDisplayText`/`CreateMonoText`, `CreateFrame`, `CreateImage`, `IsHovered`, `MenuLine` ("> WORD_"), `SettingLabel` ("mouse_sens:"), and `CloneGameUi` to copy one of the game's own widgets with its services wired up. |
+| `GuiStyles` | IMGUI styles for the simple fallback overlay, if you draw your own. |
 
 ### `FruktSharedLibrary.Controls`
 `FruktInput.GetKeyDown(Key.F9)`, `GetKey`, `GetMouseButtonDown`, `MousePosition`, `ScrollDelta` use the game's
 Input System. The old `UnityEngine.Input` may be disabled in this game. `KeyBind.Parse("Ctrl+M", Key.M).WasPressed()`
-handles configurable hotkeys.
+handles configurable hotkeys, and `TryGetPressedKey(out key)` reads "press any key" for your own rebinding UI.
 
 ### `FruktSharedLibrary.Interop`
 `obj.Is<T>()` / `obj.As<T>()` are real IL2CPP type checks and casts. `unityObj.Exists()` checks that an object
@@ -198,6 +214,12 @@ library and touch game types directly.
    actions into menus that already exist.
 8. **`ScreenCapture.CaptureScreenshot(string)` and Unity's `ImageConversion` are broken or stripped.** Use
    `Textures` for images.
+9. **The pause key ignores the game's input block.** `PauseToggleButton` is marked `IgnoresInputBlock`, so
+   blocking input isn't enough to keep Esc for your own menu. The library intercepts it while the mod menu is
+   open (and on the frame it closes).
+10. **Copies of the game's UI need its services.** The game's widgets are `ManagedBehaviour`s that get a core
+    services provider through injection. A plain `Instantiate` gives a button that never animates or raises
+    clicks. `FruktUi.CloneGameUi` copies it inactive, hands over the provider, then activates it.
 
 ---
 
@@ -221,6 +243,11 @@ The library contains an in-game self-test. Create the file `FRUKT/UserData/Frukt
 every API, and writes a PASS/FAIL report to `UserData/FruktSharedLibrary.selftest.log`. **Delete the file
 afterwards**, or the test will run on every launch.
 
+The menu part of the test logs `[SelfTest] CLICK`/`WHEEL`/`KEY`/`SCREENSHOT` markers. An external script that
+watches `MelonLoader/Latest.log` performs those clicks and key presses on the game window and takes the
+screenshots, so the menu is tested with real input. Without such a script those checks fail, but the rest of the
+report is still valid.
+
 ## Project layout
 
 ```
@@ -231,7 +258,8 @@ Gameplay/                  World, LocalPlayer, Sounds
 Entities/                  Creatures and creature/limb/organ/LVA extension methods
 Combat/                    Damage
 Spawning/                  Spawner, firearms
-UI/                        ModMenu, Notifications, ContextMenus, styles
+UI/                        ModMenu, PauseMenu, Notifications, ContextMenus, styles
+UI/Native/                 FruktTheme, FruktUi builders, the native mod menu
 Controls/                  keyboard/mouse input, key binds
 Utilities/                 layers, textures, dev tools
 Internal/                  hooks, trackers, built-in menu page, self-test (not public API)
