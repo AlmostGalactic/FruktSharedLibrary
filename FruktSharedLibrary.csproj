@@ -29,6 +29,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Unity editor scripts for building the self-test's asset bundle; they belong to a Unity project, not this one. -->
+    <Compile Remove="tools\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- MelonLoader runtime (.NET 6 build, used by IL2CPP games) -->
     <Reference Include="$(MelonLoaderDir)\net6\MelonLoader.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\net6\0Harmony.dll" Private="false" />
@@ -54,6 +59,7 @@
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.TextRenderingModule.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.AssetBundleModule.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.UIModule.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\UnityEngine.UI.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Unity.TextMeshPro.dll" Private="false" />
