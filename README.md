@@ -85,7 +85,7 @@ Help is welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## AI disclosure
 
 This library was made with AI assistance (Claude). It was used to decompile and analyse the game's IL2CPP code,
-and it helped in the writing of the library's code, tests and documentation. Everything has been run and checked
+and it helped in some of the writing of the library's code, tests, and documentation (All of which was fully looked over and debugged). Everything has been run and checked
 in the real game with the built-in self-test, but if you find something wrong, please
 [open an issue](https://github.com/AlmostGalactic/FruktSharedLibrary/issues).
 
