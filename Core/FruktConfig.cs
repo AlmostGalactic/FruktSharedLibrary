@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using MelonLoader;
 
 namespace FruktSharedLibrary.Core
@@ -18,6 +20,8 @@ namespace FruktSharedLibrary.Core
         private static MelonPreferences_Entry<bool> _builtInMenuPage;
         private static MelonPreferences_Entry<bool> _nativeStyle;
         private static MelonPreferences_Entry<bool> _pauseMenuButton;
+        private static MelonPreferences_Entry<bool> _mainMenuButton;
+        private static MelonPreferences_Entry<string[]> _disabledMods;
 
         internal static void Initialize()
         {
@@ -32,6 +36,10 @@ namespace FruktSharedLibrary.Core
                 "Draw the mod menu in FRUKT's own style (falls back to a simple menu if that fails).");
             _pauseMenuButton = _category.CreateEntry("PauseMenuButton", true, "Pause menu button",
                 "Adds a line to the game's pause menu that opens the mod menu.");
+            _mainMenuButton = _category.CreateEntry("MainMenuButton", true, "Main menu button",
+                "Adds a MODS line to the game's main menu that opens the mod menu.");
+            _disabledMods = _category.CreateEntry("DisabledMods", Array.Empty<string>(), "Disabled mods",
+                "Names of mods that use the library and are switched off. Change it from the mod menu.", is_hidden: true);
             _builtInMenuPage = _category.CreateEntry("BuiltInMenuPage", true, "Built-in sandbox tools page",
                 "Adds the library's own sandbox tools page to the mod menu.");
         }
@@ -59,5 +67,22 @@ namespace FruktSharedLibrary.Core
         public static bool NativeStyle => _nativeStyle?.Value ?? true;
 
         public static bool PauseMenuButton => _pauseMenuButton?.Value ?? true;
+
+        public static bool MainMenuButton => _mainMenuButton?.Value ?? true;
+
+        /// <summary>Names of the mods the player switched off. They aren't started the next time the game runs.</summary>
+        internal static IReadOnlyList<string> DisabledMods => _disabledMods?.Value ?? Array.Empty<string>();
+
+        internal static void SetModDisabled(string name, bool disabled)
+        {
+            if (_disabledMods == null || string.IsNullOrEmpty(name))
+                return;
+            var list = new List<string>(DisabledMods);
+            list.RemoveAll(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
+            if (disabled)
+                list.Add(name);
+            _disabledMods.Value = list.ToArray();
+            _category.SaveToFile(false);
+        }
     }
 }
