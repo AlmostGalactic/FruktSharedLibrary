@@ -62,6 +62,19 @@ The first run makes a URP project in your temp folder, which takes a few minutes
 and copies the bundle to `UserData/FruktSharedLibrary.testbundle`. Without that file the test still checks that
 bad bundles are handled, and skips the rest.
 
+### The compatibility test mod
+
+`tools/CompatTestMod` is a mod built against a fake future version of the library (9.9.0) that has a feature the
+real one doesn't. It checks that the library refuses to start mods like that, and reports them properly:
+
+```
+powershell -File tools\build-compat-test-mod.ps1 -GameDir "C:\path\to\FRUKT"
+```
+
+That builds it and puts `CompatTestMod.dll` in `Mods`. The self-test then checks it wasn't started and that the
+right things were reported. Take it out again with `-Remove`, or it will show up in the mod list as needing an
+update.
+
 ### The UI probe
 
 If the flag file says `probe quit` instead, you get a probe rather than the test. It writes out the layout of the
@@ -93,6 +106,6 @@ UI/Native/                 FruktTheme, FruktUi, the native mod menu
 Controls/                  keyboard and mouse input, key binds
 Utilities/                 layers, textures, meshes, dev tools
 Internal/                  game hooks, trackers, built-in pages, self-test (not public API)
-tools/                     self-test input script, test bundle builder
+tools/                     self-test input script, test bundle builder, compatibility test mod
 docs/                      this documentation
 ```

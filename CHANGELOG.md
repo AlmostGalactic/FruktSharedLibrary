@@ -13,6 +13,14 @@
   pink.
 - `Sounds.PlayClip` plays your own sounds through the game's mixer, as world, ambient or interface sounds.
 - `ObjectEvents.Shot` now knows which gun fired more often.
+- A MODS line on the main menu that lists the installed mods that use the library.
+- Mods can be switched off from their entry in the mod menu. A switched-off mod doesn't start the next time the
+  game runs.
+- Mods that use parts of the library the installed version doesn't have aren't started. A notification when a
+  map opens says which version they need, and so do their entries in the mod menu. Mods MelonLoader couldn't
+  start are reported the same way.
+- The library's assembly version now follows its release version, so mods record which version they were built
+  against.
 
 ## 0.1.0
 

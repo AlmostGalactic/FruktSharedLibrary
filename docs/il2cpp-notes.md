@@ -101,6 +101,14 @@ The library loads bundles by calling Unity's native functions directly: it looks
 back into an object with `UnityEngine.Bindings.Unmarshal.FromIntPtrUnsafe`. Loading assets out of a bundle once
 it's open works normally. For sounds, put them in a bundle.
 
+## MelonLoader's own methods can't be patched
+
+This one is about MelonLoader rather than IL2CPP. MelonLoader's assembly is marked `[PatchShield]`, and Harmony
+patches on anything in it are dropped without an error. The patch seems to apply, and then never runs. To keep
+a mod from starting, the library doesn't patch `MelonBase.Register`. Instead it marks the mod as already
+registered before MelonLoader gets to it, which makes `Register` skip it, and takes the mark off again once every
+mod has been registered.
+
 ## Some audio calls crash the game
 
 Two things crashed FRUKT straight to desktop while tracking down a sound bug:
