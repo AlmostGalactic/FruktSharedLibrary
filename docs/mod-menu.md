@@ -17,6 +17,35 @@ looks like the game's settings screens, and the first screen has three entries:
 Esc goes back a screen, and closes the menu from the first one. While it's open, the cursor is free and the
 game's keys are blocked.
 
+The game's main menu gets a MODS line too, under SETTINGS. It opens just the list of mods, so players can check
+what's installed and switch mods on or off before starting a map. Esc closes it.
+
+## Switching mods on and off
+
+Every mod's entry under Mods has an Enabled switch. Mods can't be loaded or unloaded while the game runs, so the
+switch takes effect the next time the game starts, and the entry says so until then. A switched-off mod doesn't
+start at all: none of its code runs, so it can't affect anything. It stays in the list, marked "(off)", so it
+can be switched back on.
+
+The library saves the list in `DisabledMods` under `[FruktSharedLibrary]` in `MelonPreferences.cfg`.
+
+## Mods that need a newer version of the library
+
+When the game starts, the library checks every mod that uses it, before any of them runs. If a mod uses
+something this version of the library doesn't have (because it was built for a newer one), the library doesn't
+start that mod, instead of letting it crash halfway through. When a map opens, a notification says which mod was
+turned off and which version it needs:
+
+> Bigger Guns is turned off: it needs FruktSharedLibrary 0.2.0 or newer, and this is 0.1.5.
+
+The mod's entry under Mods is marked "(needs update)" and lists what's missing. Mods that MelonLoader itself
+refused to start, for example because another mod they need isn't installed, are marked "(didn't start)", and
+get a notification too.
+
+Nothing is needed from mod authors for this. The check looks at what your mod actually uses, so building against
+a newer library is fine as long as you only use things players' versions have. The version in the message is
+the one you built against.
+
 ## Adding a page
 
 ```csharp
@@ -106,7 +135,7 @@ ModMenu.AddPreferencesPage(prefs);
 | `Open()`, `Close()`, `Toggle()`, `IsOpen` | Show or hide the menu. |
 | `OpenChanged` | Fires with `true` when the menu opens and `false` when it closes. |
 | `ToggleKey` | The key the player set, as a `KeyBind`. |
-| `LibraryMods` | The installed mods that use the library, as `MelonBase`, sorted by name. |
+| `LibraryMods` | The running mods that use the library, as `MelonBase`, sorted by name. |
 
 ## Pause menu lines
 
@@ -134,6 +163,8 @@ The library's own options. Players can change them on the Library settings page,
 |------------|---------|--------------|
 | `ModMenuKey` | `F8` | The key that opens and closes the menu, like `F6`, `Insert` or `Ctrl+M`. |
 | `PauseMenuButton` | `true` | Whether to add the mod menu line to the pause menu. Needs a restart. |
+| `MainMenuButton` | `true` | Whether to add the MODS line to the main menu. Turning it off takes effect the next time the main menu loads. |
+| `DisabledMods` | empty | The mods switched off from the mod menu. Hidden from the settings page. |
 | `NativeStyle` | `true` | Draws the menu and notifications in the game's style. Turn it off for a plain overlay. |
 | `ShowNotifications` | `true` | Whether mods' notifications are shown. |
 | `BuiltInMenuPage` | `true` | Whether to show the Sandbox Tools page. Needs a restart. |

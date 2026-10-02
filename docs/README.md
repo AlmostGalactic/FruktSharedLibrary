@@ -9,7 +9,7 @@
 | [Spawning](spawning.md) | `Spawner`, `FirearmType`, firearm extensions, spawning your own models |
 | [Joints and object events](objects.md) | `Joints`, `JointHandle`, `ObjectEvents` |
 | [Asset bundles](asset-bundles.md) | Making bundles in Unity, `ModBundle`, `Shaders` |
-| [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages, `PauseMenu`, the library's settings |
+| [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages, `PauseMenu`, switching mods off, version checks, the library's settings |
 | [Right-click menus](context-menus.md) | `ContextMenus`, `ContextMenuGroup`, `ContextMenuContext` |
 | [Notifications and native UI](ui.md) | `Notifications`, `FruktTheme`, `FruktUi`, `GuiStyles` |
 | [Input](input.md) | `FruktInput`, `KeyBind` |

@@ -16,7 +16,10 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
 - Joints (welds, hinges, ropes, springs and more), and events for when objects collide, get grabbed or get shot
 - Asset bundles from Unity: prefabs, textures, materials and sounds, with materials switched to the game's shaders
-- A mod menu styled like the game's settings screens, with an entry for every mod that uses the library
+- A mod menu styled like the game's settings screens, with an entry for every mod that uses the library and a
+  switch to turn each one off, also reachable from a MODS line on the main menu
+- Mods built for a newer version of the library are kept from starting, with a message saying which version
+  they need, instead of crashing halfway
 - Your own lines in right-click menus, including drop-down groups
 - Notifications, pause-menu buttons and UI helpers that use the game's fonts and colours
 - Helpers for the IL2CPP problems that trip people up
@@ -30,7 +33,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
    gives code descriptions in their editor), and MelonLoader ignores it if it ends up in `Mods`.
 
 Mods that use the library need it installed. To open the mod menu, press F8 in a map or pick MODS in the pause
-menu. If you also have FruitLib, that line is called MOD MENU instead, because FruitLib already has one called
+menu. MODS on the main menu lists the installed mods, where you can switch them on and off. If you also have FruitLib, that line is called MOD MENU instead, because FruitLib already has one called
 MODS.
 
 ## Using it in a mod
