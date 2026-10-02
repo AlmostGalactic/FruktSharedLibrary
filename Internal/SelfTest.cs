@@ -480,6 +480,23 @@ namespace FruktSharedLibrary.Internal
                     break;
                 yield return meshTest.Current;
             }
+            var jointTest = TestJoints();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = jointTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Joint test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return jointTest.Current;
+            }
             Section("UI", () =>
             {
                 Notifications.Show("FruktSharedLibrary self-test notification", 8f);
