@@ -7,6 +7,7 @@
 | [World, player and sounds](world-and-player.md) | `World`, `LocalPlayer`, `Sounds` |
 | [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the body simulation, `Damage` |
 | [Spawning](spawning.md) | `Spawner`, `FirearmType`, firearm extensions, spawning your own models |
+| [Joints and object events](objects.md) | `Joints`, `JointHandle`, `ObjectEvents` |
 | [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages, `PauseMenu`, the library's settings |
 | [Right-click menus](context-menus.md) | `ContextMenus`, `ContextMenuGroup`, `ContextMenuContext` |
 | [Notifications and native UI](ui.md) | `Notifications`, `FruktTheme`, `FruktUi`, `GuiStyles` |
@@ -22,7 +23,7 @@ Everything public also has XML docs, so you get the same descriptions in Intelli
 
 - It's all static classes and extension methods. There's nothing to create or set up.
 - Namespaces match the folders: `FruktSharedLibrary.Core`, `.Gameplay`, `.Entities`, `.Combat`, `.Spawning`,
-  `.UI`, `.Controls`, `.Interop` and `.Utilities`.
+  `.Objects`, `.UI`, `.Controls`, `.Interop` and `.Utilities`.
 - Game types keep their interop names, which start with `Il2Cpp` (for example
   `Il2CppLVA.Creatures.AbstractCreature` or `Il2CppData.Maps.MapID`).
 - Most gameplay calls need a loaded map. Check `GameState.InSandbox`, or start from `GameEvents.SandboxReady`.

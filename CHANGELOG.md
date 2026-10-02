@@ -4,6 +4,10 @@
 
 - Load your own 3D models from OBJ files with `Meshes.LoadObj`, and put them in the world with
   `Spawner.SpawnMesh`. They're lit like the game's objects, and the player can grab, pin, throw and shoot them.
+- Joints: welds, hinges (with limits, a motor or a spring), ball sockets, springs, ropes and sliders, all
+  breakable, on anything with a rigidbody.
+- Object events: collisions, hard hits, impact sounds, being grabbed and released, and being shot.
+- Spawned meshes play impact sounds when they hit things.
 
 ## 0.1.0
 

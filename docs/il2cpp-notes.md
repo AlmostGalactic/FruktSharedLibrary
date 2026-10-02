@@ -68,6 +68,25 @@ The game's UI pieces are given a "core services provider" when they're created. 
 [`FruktUi.CloneGameUi`](ui.md#fruktui) makes the copy while it's switched off, gives it the provider, and then
 switches it on.
 
+## Parts of Unity are missing from the build
+
+Unity leaves out whatever a game doesn't use when it builds it. FRUKT's build has no `SpringJoint` at all, and
+`HingeJoint` is there but without its limits, motor or spring. Code that uses them compiles fine and then fails
+in the game. `ConfigurableJoint` can do everything those can, which is why every joint in `Joints` is one.
+
+## Bullets are physical objects
+
+The game's bullets are real rigidbodies that fly and collide, not raycasts. So a shot hitting something arrives
+as an ordinary collision with a `Bullet`. That's how `ObjectEvents.Shot` works.
+
+## Your own components need registering first
+
+To get Unity messages like `OnCollisionEnter`, the component has to be a class the game's IL2CPP runtime knows
+about. Il2CppInterop's `ClassInjector.RegisterTypeInIl2Cpp<T>()` registers a C# `MonoBehaviour` subclass at
+runtime; it needs a constructor that takes an `IntPtr`. Members it can't translate, such as properties of your
+own managed types, are skipped with a warning in the log, which is harmless. The library does this for its
+collision events.
+
 ## Some audio calls crash the game
 
 Two things crashed FRUKT straight to desktop while tracking down a sound bug:

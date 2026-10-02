@@ -69,6 +69,7 @@ FruktSharedLibraryMod.cs   MelonLoader entry point: update loop, GUI and hooks
 Core/                      services, events, game state, scheduler, safe patching, logging, preferences
 Interop/                   IL2CPP casts, collection copying, game event subscriptions
 Gameplay/                  World, LocalPlayer, Sounds
+Objects/                   Joints, ObjectEvents
 Entities/                  Creatures and creature/limb/organ/LVA extensions
 Combat/                    Damage
 Spawning/                  Spawner and firearms

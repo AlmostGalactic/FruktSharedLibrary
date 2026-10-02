@@ -14,6 +14,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Creatures: spawn, find, heal, kill and push them around, detach limbs, read blood and pain
 - Damage that works like the game's own weapons, and explosions
 - Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
+- Joints (welds, hinges, ropes, springs and more), and events for when objects collide, get grabbed or get shot
 - A mod menu styled like the game's settings screens, with an entry for every mod that uses the library
 - Your own lines in right-click menus, including drop-down groups
 - Notifications, pause-menu buttons and UI helpers that use the game's fonts and colours
@@ -63,6 +64,7 @@ Everything is documented in [`docs/`](docs/README.md):
 - [World, player and sounds](docs/world-and-player.md)
 - [Creatures and damage](docs/creatures.md)
 - [Spawning](docs/spawning.md)
+- [Joints and object events](docs/objects.md)
 - [Mod menu and pause menu](docs/mod-menu.md)
 - [Right-click menus](docs/context-menus.md)
 - [Notifications and native UI](docs/ui.md)
