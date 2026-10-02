@@ -70,6 +70,8 @@ namespace FruktSharedLibrary.UI
         private static ModMenuPage _page => Stack.Count == 0 ? null : Stack[Stack.Count - 1];
         private static int _modCount;
         private static string _origin = "frukt";
+        // How many pages at the bottom of the stack can't be left with Esc (1 when opened on just the mods list).
+        private static int _floor;
         private static string _layoutSignature;
         private static float _scroll;
         private static float _contentHeight;
@@ -83,7 +85,9 @@ namespace FruktSharedLibrary.UI
         internal static bool Failed => _failed;
 
         /// <summary>Opens the menu. <paramref name="origin"/> is the breadcrumb root ("pause" or "frukt").</summary>
-        internal static bool Open(string origin, ModMenuPage page = null)
+        /// <param name="only">Open on <paramref name="page"/> and stay inside it: Esc on it closes the menu instead
+        /// of going to the top-level list.</param>
+        internal static bool Open(string origin, ModMenuPage page = null, bool only = false)
         {
             if (!EnsureBuilt())
                 return false;
@@ -91,6 +95,7 @@ namespace FruktSharedLibrary.UI
             Stack.Clear();
             if (page != null)
                 Stack.Add(page);
+            _floor = page != null && only ? 1 : 0;
             _scroll = 0f;
             _layoutSignature = null;
             _capturing = null;
@@ -128,7 +133,7 @@ namespace FruktSharedLibrary.UI
                 _capturing = null;
                 return;
             }
-            if (_page != null)
+            if (Stack.Count > _floor)
             {
                 Stack.RemoveAt(Stack.Count - 1);
                 _scroll = 0f;
@@ -393,7 +398,7 @@ namespace FruktSharedLibrary.UI
             _console.text = $"fsl v{FruktSharedLibraryMod.Version} | mods: {_modCount}";
             _trail.text = Trail();
             _title.text = (_page?.Title ?? "MOD MENU").ToUpperInvariant();
-            _escAction.text = _page == null ? "CLOSE" : "BACK";
+            _escAction.text = Stack.Count <= _floor ? "CLOSE" : "BACK";
 
             foreach (var row in Rows)
             {
@@ -627,6 +632,7 @@ namespace FruktSharedLibrary.UI
             Stack.Clear();
             if (page != null)
                 Stack.Add(page);
+            _floor = 0;
             _scroll = 0f;
             _layoutSignature = null;
             Update();
@@ -686,7 +692,8 @@ namespace FruktSharedLibrary.UI
         {
             if (Stack.Count == 0)
                 return _origin + " /";
-            var builder = new StringBuilder(_origin).Append(" / mod menu / ");
+            // Opened on just one page (the main menu's MODS line), it hangs straight off the origin.
+            var builder = new StringBuilder(_origin).Append(_floor > 0 ? " / " : " / mod menu / ");
             for (int i = 0; i < Stack.Count - 1; i++)
                 builder.Append(Stack[i].Title.ToLowerInvariant()).Append(" / ");
             return builder.ToString().TrimEnd();

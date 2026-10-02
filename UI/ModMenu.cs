@@ -103,6 +103,21 @@ namespace FruktSharedLibrary.UI
 
         public static void Toggle() => SetOpen(!IsOpen);
 
+        /// <summary>
+        /// Opens the menu on just the MODS list (for the main menu's MODS line): Esc closes it from there, and the
+        /// rest of the menu isn't reachable.
+        /// </summary>
+        internal static void OpenModsList()
+        {
+            if (IsOpen)
+                return;
+            _openOn = ModsPage;
+            SetOpen(true);
+        }
+
+        // The page the next SetOpen(true) shows on its own (null: the normal top-level list).
+        private static ModMenuPage _openOn;
+
         /// <summary>The pause-menu line that opens this menu (null when turned off in the preferences).</summary>
         internal static PauseMenu.Entry PauseEntry { get; private set; }
 
@@ -173,7 +188,14 @@ namespace FruktSharedLibrary.UI
             if (open)
             {
                 LocalPlayer.CaptureCursor(_cursorOwner);
-                _native = FruktConfig.NativeStyle && !ForceSimple && NativeModMenu.Open(GameState.InSandbox ? "pause" : "frukt");
+                var only = _openOn;
+                _openOn = null;
+                _native = FruktConfig.NativeStyle && !ForceSimple && NativeModMenu.Open(GameState.InSandbox ? "pause" : "frukt", only, only != null);
+                if (!_native && only != null)
+                {
+                    // The simple menu has no single-page mode; start it on the MODS tab instead.
+                    _selected = 0;
+                }
             }
             else
             {
