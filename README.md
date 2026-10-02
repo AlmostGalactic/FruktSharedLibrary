@@ -49,7 +49,9 @@ public class MyMod : MelonMod
 }
 ```
 
-[Getting started](docs/getting-started.md) walks through the project setup and a full example mod.
+[Getting started](docs/getting-started.md) walks through the project setup and a full example mod. For a
+finished mod to read, see [FSL Party](https://github.com/AlmostGalactic/FslParty), a small demo that uses most of
+the library.
 
 ## Documentation
 
