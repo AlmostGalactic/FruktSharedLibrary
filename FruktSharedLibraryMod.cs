@@ -18,11 +18,19 @@ namespace FruktSharedLibrary
         /// <summary>The running library instance.</summary>
         public static FruktSharedLibraryMod Instance { get; private set; }
 
-        public override void OnInitializeMelon()
+        // MelonLoader registers the library before any mod that depends on it, so this runs before those mods
+        // have started: the moment to check them, and keep the switched-off and incompatible ones from starting.
+        public override void OnEarlyInitializeMelon()
         {
             Instance = this;
             FruktLog.Initialize(LoggerInstance);
             FruktConfig.Initialize();
+            ModGuard.Initialize();
+        }
+
+        public override void OnInitializeMelon()
+        {
+            ModGuard.AfterStartup();
             LibraryPatches.Apply(HarmonyInstance);
             PauseMenu.Initialize();
             GameEvents.SandboxExited += Objects.Joints.Clear;
@@ -46,6 +54,7 @@ namespace FruktSharedLibrary
             CreatureTracker.Update();
             ModMenu.Update();
             PauseMenu.Update();
+            MainMenuButton.Update();
             Notifications.Update();
             GameEvents.RaiseUpdate();
         }
