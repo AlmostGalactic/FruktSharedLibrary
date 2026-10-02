@@ -463,6 +463,23 @@ namespace FruktSharedLibrary.Internal
                 Check("Textures.LoadFromBytes round trip", loaded != null && loaded.width == 8 && loaded.height == 4, loaded == null ? "null" : $"{loaded.width}x{loaded.height}");
                 Check("Textures.ToSprite", Textures.ToSprite(loaded) != null);
             });
+            var bundleTest = TestAssetBundles();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = bundleTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Asset bundle test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return bundleTest.Current;
+            }
             var meshTest = TestMeshes();
             while (true)
             {
