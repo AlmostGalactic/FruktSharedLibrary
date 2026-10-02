@@ -8,6 +8,11 @@
   breakable, on anything with a rigidbody.
 - Object events: collisions, hard hits, impact sounds, being grabbed and released, and being shot.
 - Spawned meshes play impact sounds when they hit things.
+- Load asset bundles made in Unity 6000.3.18f1 with `ModBundle`, from a file, from bytes or from inside your DLL.
+  Prefabs spawn as grabbable props, and their materials are switched to the game's shaders so they don't show up
+  pink.
+- `Sounds.PlayClip` plays your own sounds through the game's mixer, as world, ambient or interface sounds.
+- `ObjectEvents.Shot` now knows which gun fired more often.
 
 ## 0.1.0
 
@@ -66,6 +71,5 @@ Things I'd like to add. Suggestions and pull requests are welcome; see [CONTRIBU
 - Events for limb damage and for spawned objects
 - Knocking creatures out
 - Regrowing destroyed tissue
-- Loading asset bundles for custom models, textures and sounds
 - An easy way for mods to save their own data
 - Support for other aspect ratios, like ultrawide
