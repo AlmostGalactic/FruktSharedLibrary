@@ -79,7 +79,7 @@ namespace FruktSharedLibrary.Internal
             {
                 _stage = 1;
                 Check("MainMenuEntered event", true);
-                Scheduler.After(3f, () => Check("World.LoadMap(Yard)", World.LoadMap(MapID.Yard)));
+                Scheduler.StartCoroutine(MainMenuThenLoadMap());
             }
             else if (_stage == 2)
             {
@@ -87,6 +87,32 @@ namespace FruktSharedLibrary.Internal
                 Check("Returned to the main menu", true);
                 Finish();
             }
+        }
+
+        private static IEnumerator MainMenuThenLoadMap()
+        {
+            yield return Wait(3f);
+            if (!_probe)
+            {
+                var test = TestMainMenu();
+                while (true)
+                {
+                    bool more;
+                    try
+                    {
+                        more = test.MoveNext();
+                    }
+                    catch (Exception e)
+                    {
+                        Check("Main menu test ran without exceptions", false, e.ToString());
+                        break;
+                    }
+                    if (!more)
+                        break;
+                    yield return test.Current;
+                }
+            }
+            Check("World.LoadMap(Yard)", World.LoadMap(MapID.Yard));
         }
 
         private static void OnSandboxReady(MapID map)
@@ -108,6 +134,11 @@ namespace FruktSharedLibrary.Internal
 
         private static IEnumerator Run()
         {
+            if (ModGuard.All.Any(m => m.State == LibraryModState.NeedsNewerLibrary || m.State == LibraryModState.DidNotStart))
+            {
+                yield return Wait(1f);
+                Shot("startup-notifications");
+            }
             Section("Services", TestServices);
             Section("World", TestWorldInstant);
             yield return null;

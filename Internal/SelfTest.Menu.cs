@@ -141,14 +141,15 @@ namespace FruktSharedLibrary.Internal
                 var example = ModMenu.LibraryMods.FirstOrDefault(m => m.Info.Name == "ExampleMod");
                 if (example == null)
                 {
-                    var mods = ModMenu.LibraryMods;
+                    // Running or not: mods that weren't started are listed too, so they can be switched on and off.
+                    var mods = ModGuard.All;
                     if (mods.Count == 0)
                         Check("MODS says when no mod uses the library", modsPage.Items.Count == 1 && modsPage.Items[0].SafeText.StartsWith("No installed mod"),
                             modsPage.Items.Count + " items");
                     else
                         Check("MODS lists every mod that uses the library",
                             modsPage.Items.FindAll(i => i.Kind == ModMenuItemKind.Link).Count == mods.Count,
-                            string.Join(", ", mods.Select(m => m.Info.Name)));
+                            string.Join(", ", modsPage.Items.Select(i => i.SafeText)));
                 }
                 else
                 {
