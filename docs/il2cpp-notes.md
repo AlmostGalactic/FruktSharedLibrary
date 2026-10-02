@@ -87,6 +87,20 @@ runtime; it needs a constructor that takes an `IntPtr`. Members it can't transla
 own managed types, are skipped with a warning in the log, which is harmless. The library does this for its
 collision events.
 
+## Unity 6's span-based methods are broken
+
+Unity 6 moved a lot of its methods to take or return `ReadOnlySpan<T>` internally. The interop can't translate
+those, so calling them fails with a `MissingMethodException` that mentions `ReadOnlySpan.GetPinnableReference`.
+The ones found so far:
+
+- `AssetBundle.LoadFromFile` and `AssetBundle.LoadFromMemory`
+- `AudioClip.SetData`, so sounds can't be made in code
+
+The library loads bundles by calling Unity's native functions directly: it looks them up with
+`IL2CPP.ResolveICall`, passes the path or bytes as a pinned pointer and length, and turns the handle that comes
+back into an object with `UnityEngine.Bindings.Unmarshal.FromIntPtrUnsafe`. Loading assets out of a bundle once
+it's open works normally. For sounds, put them in a bundle.
+
 ## Some audio calls crash the game
 
 Two things crashed FRUKT straight to desktop while tracking down a sound bug:

@@ -48,6 +48,20 @@ Run it right after you start the game, and leave the game in front. It only send
 window. Screenshots end up in `tools/shots`. If you don't run it, the checks that need clicks will fail, but the
 rest of the results still count.
 
+### The test bundle
+
+The asset bundle checks need a real bundle, and the repo doesn't hold binary files, so you build it yourself with
+Unity 6000.3.18f1:
+
+```
+powershell -File tools\build-test-bundle.ps1 -Unity "C:\path\to\6000.3.18f1\Editor\Unity.exe" -GameDir "C:\path\to\FRUKT"
+```
+
+The first run makes a URP project in your temp folder, which takes a few minutes. The script then runs
+`tools/TestBundle/Editor/BuildTestBundle.cs`, which generates a texture, a sound, a material and a crate prefab,
+and copies the bundle to `UserData/FruktSharedLibrary.testbundle`. Without that file the test still checks that
+bad bundles are handled, and skips the rest.
+
 ### The UI probe
 
 If the flag file says `probe quit` instead, you get a probe rather than the test. It writes out the layout of the
@@ -70,14 +84,15 @@ Core/                      services, events, game state, scheduler, safe patchin
 Interop/                   IL2CPP casts, collection copying, game event subscriptions
 Gameplay/                  World, LocalPlayer, Sounds
 Objects/                   Joints, ObjectEvents
+Assets/                    asset bundles and shader fixing
 Entities/                  Creatures and creature/limb/organ/LVA extensions
 Combat/                    Damage
 Spawning/                  Spawner and firearms
 UI/                        ModMenu, PauseMenu, Notifications, ContextMenus
 UI/Native/                 FruktTheme, FruktUi, the native mod menu
 Controls/                  keyboard and mouse input, key binds
-Utilities/                 layers, textures, dev tools
+Utilities/                 layers, textures, meshes, dev tools
 Internal/                  game hooks, trackers, built-in pages, self-test (not public API)
-tools/                     self-test input script
+tools/                     self-test input script, test bundle builder
 docs/                      this documentation
 ```
