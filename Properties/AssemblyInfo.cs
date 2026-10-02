@@ -38,5 +38,7 @@ using MelonLoader;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.1.0.0")]
-[assembly: AssemblyFileVersion("0.1.0.0")]
+// Kept in step with FruktSharedLibraryMod.Version. Mods record the version they were built against, which is how
+// the library can tell a player which version a mod needs.
+[assembly: AssemblyVersion(FruktSharedLibrary.FruktSharedLibraryMod.Version)]
+[assembly: AssemblyFileVersion(FruktSharedLibrary.FruktSharedLibraryMod.Version)]
