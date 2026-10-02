@@ -204,6 +204,69 @@ namespace FruktSharedLibrary.Spawning
                 UnityEngine.Object.Destroy(spawned.gameObject);
         }
 
+        /// <summary>
+        /// Puts a mesh in the world as a physics object (for example one loaded with
+        /// <see cref="Utilities.Meshes.LoadObj"/>). It's on the same layer as the game's props, so the player can
+        /// grab, throw and shoot it. It isn't one of the game's registered objects, so "reset map" leaves it alone;
+        /// destroy the returned GameObject to remove it.
+        /// </summary>
+        /// <param name="material">Defaults to a plain grey <see cref="Utilities.Meshes.CreateMaterial"/>.</param>
+        /// <param name="mass">In kilograms.</param>
+        /// <param name="physics">False for a static object with a collider but no rigidbody.</param>
+        public static GameObject SpawnMesh(Mesh mesh, Vector3 position, Quaternion? rotation = null, Material material = null,
+            float mass = 10f, bool physics = true)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+            var go = new GameObject(string.IsNullOrEmpty(mesh.name) ? "Mesh" : mesh.name);
+            go.transform.SetPositionAndRotation(position, rotation ?? Quaternion.identity);
+            go.layer = Utilities.Meshes.PropLayer;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = material ?? DefaultMeshMaterial;
+            AddCollider(go, mesh, physics);
+            if (physics)
+            {
+                var body = go.AddComponent<Rigidbody>();
+                body.mass = Mathf.Max(0.01f, mass);
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+                body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            }
+            return go;
+        }
+
+        /// <summary>Spawns a mesh in front of the player, dropped onto whatever is below.</summary>
+        public static GameObject SpawnMeshInFront(Mesh mesh, float distance = 2f, Material material = null, float mass = 10f)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+            // Lift it by half its height so it doesn't start inside the ground.
+            var position = LocalPlayer.GetPointInFront(distance) + Vector3.up * (mesh.bounds.extents.y + 0.05f) - mesh.bounds.center;
+            return SpawnMesh(mesh, position, LocalPlayer.RotationFacingPlayer(position), material, mass);
+        }
+
+        private static Material _defaultMeshMaterial;
+
+        private static Material DefaultMeshMaterial => _defaultMeshMaterial.Exists() ? _defaultMeshMaterial : _defaultMeshMaterial = Utilities.Meshes.CreateMaterial();
+
+        private static void AddCollider(GameObject go, Mesh mesh, bool physics)
+        {
+            // Moving rigidbodies need a convex collider. Fall back to a box if the mesh can't be cooked.
+            try
+            {
+                var collider = go.AddComponent<MeshCollider>();
+                collider.sharedMesh = mesh;
+                collider.convex = physics;
+                return;
+            }
+            catch (Exception e)
+            {
+                FruktLog.Debug($"Mesh collider for '{mesh.name}' failed ({e.Message}); using a box");
+            }
+            var box = go.AddComponent<BoxCollider>();
+            box.center = mesh.bounds.center;
+            box.size = mesh.bounds.size;
+        }
+
         private static PrefabsRegistration Registration
         {
             get

@@ -13,7 +13,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - World and player control: time scale, gravity, pause, maps, the camera and aiming
 - Creatures: spawn, find, heal, kill and push them around, detach limbs, read blood and pain
 - Damage that works like the game's own weapons, and explosions
-- Spawning guns, props and anything else the game has registered
+- Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
 - A mod menu styled like the game's settings screens, with an entry for every mod that uses the library
 - Your own lines in right-click menus, including drop-down groups
 - Notifications, pause-menu buttons and UI helpers that use the game's fonts and colours
@@ -24,7 +24,8 @@ one place instead of in every mod. An in-game self-test checks all of it against
 1. Install [MelonLoader](https://melonwiki.xyz/) 0.7 or newer for FRUKT.
 2. Download `FruktSharedLibrary.dll` from the
    [releases page](https://github.com/AlmostGalactic/FruktSharedLibrary/releases) and put it in
-   `FRUKT/Mods`.
+   `FRUKT/Mods`. That's the only file you need. The `.xml` next to it on the releases page is for modders (it
+   gives code descriptions in their editor), and MelonLoader ignores it if it ends up in `Mods`.
 
 Mods that use the library need it installed. To open the mod menu, press F8 in a map or pick MODS in the pause
 menu. If you also have FruitLib, that line is called MOD MENU instead, because FruitLib already has one called

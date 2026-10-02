@@ -32,6 +32,26 @@ foreach (var name in Spawner.GetPropNames())
 While you're working on a mod, `DevTools.LogPrefabIds()` prints every ID to the console
 (see [Interop and utilities](interop-and-utilities.md#devtools)).
 
+## Your own models
+
+You can also put your own 3D models in the world. Load them with
+[`Meshes.LoadObj`](interop-and-utilities.md#meshes), then:
+
+| Member | Description |
+|--------|-------------|
+| `SpawnMesh(mesh, position, rotation = null, material = null, mass = 10, physics = true)` | Puts the mesh in the world as a physics object. Pass `physics: false` for something that stays put. |
+| `SpawnMeshInFront(mesh, distance = 2, material = null, mass = 10)` | The same, sitting on the ground in front of the player. |
+
+These objects are on the same physics layer as the game's props, so the player can grab, pin, rotate, throw and
+shoot them like anything else. They aren't registered with the game, though, so "reset map" doesn't remove them.
+Destroy the `GameObject` you get back when you're done with it. Without a material they're plain grey.
+
+```csharp
+var mesh = Meshes.LoadObj(Path.Combine(modFolder, "crate.obj"));
+var texture = Textures.LoadFromFile(Path.Combine(modFolder, "crate.png"));
+var crate = Spawner.SpawnMeshInFront(mesh, material: Meshes.CreateMaterial(texture), mass: 25f);
+```
+
 ## Firearm extensions
 
 On any `Il2CppSpawnables.Weapons.Firearm`:

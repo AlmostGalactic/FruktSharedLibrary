@@ -5,6 +5,7 @@
 #   [SelfTest] CLICK <name> <fx> <fy>       -> left click at a fraction of FRUKT's client area (top-left origin)
 #   [SelfTest] WHEEL <name> <notches>       -> mouse wheel (negative = down)
 #   [SelfTest] KEY <name> <virtual-key>     -> key press
+#   [SelfTest] MOUSEDOWN|MOUSEUP <name>     -> press or release the left mouse button
 # Input is only sent while FRUKT is the foreground window. Exits when the test finishes or the game closes.
 param(
     [string]$GameDir = "D:\SteamLibrary\steamapps\common\FRUKT",
@@ -53,7 +54,7 @@ while (((Get-Date) - $start).TotalMinutes -lt 7) {
         $text = $reader.ReadToEnd()
         $reader.Close()
     } catch { continue }
-    foreach ($m in [regex]::Matches($text, '\[SelfTest\] (SCREENSHOT|CLICK|WHEEL|KEY) ([\w-]+)(?: (-?[\d.]+))?(?: (-?[\d.]+))?')) {
+    foreach ($m in [regex]::Matches($text, '\[SelfTest\] (SCREENSHOT|CLICK|WHEEL|KEY|MOUSEDOWN|MOUSEUP) ([\w-]+)(?: (-?[\d.]+))?(?: (-?[\d.]+))?')) {
         $kind = $m.Groups[1].Value
         $name = $m.Groups[2].Value
         $id = "$kind $name"
@@ -86,6 +87,12 @@ while (((Get-Date) - $start).TotalMinutes -lt 7) {
             Start-Sleep -Milliseconds 80
             [W32]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero) # left up
             "clicked $name at $x,$y"
+        } elseif ($kind -eq 'MOUSEDOWN') {
+            [W32]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
+            "mouse down $name"
+        } elseif ($kind -eq 'MOUSEUP') {
+            [W32]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
+            "mouse up $name"
         } elseif ($kind -eq 'WHEEL') {
             $notches = [int]$m.Groups[3].Value
             for ($i = 0; $i -lt [Math]::Abs($notches); $i++) {

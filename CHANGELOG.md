@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Load your own 3D models from OBJ files with `Meshes.LoadObj`, and put them in the world with
+  `Spawner.SpawnMesh`. They're lit like the game's objects, and the player can grab, pin, throw and shoot them.
+
 ## 0.1.0
 
 The first release. Tested with MelonLoader 0.7.4 on the current FRUKT build (Unity 6000.3), with FruitLib,

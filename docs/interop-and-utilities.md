@@ -86,6 +86,29 @@ MelonLoader's image support instead.
 | `ToSprite(texture, pixelsPerUnit = 100)` | Makes a sprite from a texture, for UI images. |
 | `Solid(color, width = 1, height = 1)` | A texture that's all one colour. |
 
+## Meshes
+
+Loads 3D models from OBJ files, which Blender and most other 3D programs can export. You don't need Unity for
+this.
+
+| Member | Description |
+|--------|-------------|
+| `LoadObj(path, scale = 1)` | Loads an OBJ file into a mesh, or returns `null` if it can't. Use `scale` for models made in other units, like 0.01 for centimetres. |
+| `ParseObj(text, name = "Mesh", scale = 1)` | The same, from text, for a model you've embedded in your mod. Throws if the text isn't a valid model. |
+| `CreateMaterial(texture = null, color = null)` | A material that's lit and shaded like the game's own objects, with an optional texture and colour. |
+| `PropLayer` | The physics layer the game's props are on. |
+
+A few things about the OBJ loading:
+
+- Everything in the file becomes one mesh. Material (`usemtl`) and `.mtl` files are ignored; give it a texture
+  with `CreateMaterial` instead.
+- Faces with more than three corners are split into triangles, and big models are fine.
+- If the file has no normals, they're calculated for you.
+- OBJ files and Unity use mirrored axes, so the X axis is flipped on loading. A model exported from Blender with
+  its default settings comes out facing the right way.
+
+To put a mesh in the world, use [`Spawner.SpawnMesh`](spawning.md#your-own-models).
+
 ## DevTools
 
 For finding your way around the game's objects. These print to the MelonLoader console.
