@@ -37,7 +37,8 @@ A few features need more assemblies from `MelonLoader\Il2CppAssemblies`. The com
 |----------|------------|
 | `Il2CppSystem.Core.dll` | `ToManagedList()` on game collections |
 | `Il2CppTripledoseLibs.dll` | The game's own events (`Listen`) |
-| `UnityEngine.AudioModule.dll` | Working with `AudioSource`s yourself |
+| `UnityEngine.AudioModule.dll` | Working with `AudioSource`s yourself, and `Load<AudioClip>` from a bundle |
+| `UnityEngine.AssetBundleModule.dll` | Using a `ModBundle`'s Unity `AssetBundle` directly |
 | `UnityEngine.UIModule.dll`, `UnityEngine.UI.dll`, `Unity.TextMeshPro.dll` | Building UI with `FruktUi` |
 | `Il2CppZenject.dll` | Using `GameServices` containers directly |
 

@@ -97,6 +97,7 @@ this.
 | `ParseObj(text, name = "Mesh", scale = 1)` | The same, from text, for a model you've embedded in your mod. Throws if the text isn't a valid model. |
 | `CreateMaterial(texture = null, color = null)` | A material that's lit and shaded like the game's own objects, with an optional texture and colour. |
 | `PropLayer` | The physics layer the game's props are on. |
+| `UsePropLayer(gameObject)` | Puts an object and every child with a collider on `PropLayer`, so the player can grab and shoot it. |
 
 A few things about the OBJ loading:
 

@@ -85,3 +85,27 @@ Sounds.Play(WeaponSFXType.Shoot762, LocalPlayer.Position);
 
 The interface sounds are `ToolbarItemSwitch`, `HintButtonClick`, `LargeButtonClick`, `SmallButtonClick`,
 `SwitchOn`, `SwitchOff`, `SliderHoldClick`, `WindowOpenClose`, `SlowMotionStart`, `SlowMotionStop` and `ItemSend`.
+
+### Your own sounds
+
+`PlayClip(clip, position, volume, pitch, loop, group)` plays an `AudioClip` you loaded yourself, usually from an
+[asset bundle](asset-bundles.md). It goes through the game's mixer, so the player's volume settings apply. With a
+position it's 3D, without one it's 2D. It returns the `AudioSource`, so you can stop a looping sound later.
+One-shot sounds clean up after themselves.
+
+`group` picks which part of the game's mixer the sound uses:
+
+| `SoundGroup` | For |
+|--------------|-----|
+| `World` | Things happening in the world. Slows down in slow motion like gunshots and impacts do. The default when you give a position. |
+| `Ambient` | World sounds that keep normal speed in slow motion, like ambience or machines. |
+| `Interface` | Menus and notifications. The default without a position. |
+
+```csharp
+var hum = Sounds.PlayClip(humClip, generator.transform.position, loop: true, group: SoundGroup.Ambient);
+// later
+UnityEngine.Object.Destroy(hum.gameObject);
+```
+
+Sounds you make in code with `AudioClip.Create` and `SetData` don't work in this game (see the
+[IL2CPP notes](il2cpp-notes.md#unity-6s-span-based-methods-are-broken)). Put them in a bundle instead.
