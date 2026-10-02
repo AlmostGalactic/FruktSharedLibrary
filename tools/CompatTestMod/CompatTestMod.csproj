@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>CompatTestMod</AssemblyName>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <FruktGameDir Condition="'$(FruktGameDir)' == ''">D:\SteamLibrary\steamapps\common\FRUKT</FruktGameDir>
+    <DefaultItemExcludes>$(DefaultItemExcludes);FutureLibrary\**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="FutureLibrary\FutureLibrary.csproj" Private="false" />
+    <Reference Include="$(FruktGameDir)\MelonLoader\net6\MelonLoader.dll" Private="false" />
+  </ItemGroup>
+</Project>
