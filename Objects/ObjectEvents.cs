@@ -215,20 +215,27 @@ namespace FruktSharedLibrary.Objects
             }
         }
 
-        /// <summary>A bullet's launcher is the ShotBus of the gun that fired it; find the gun that owns it.</summary>
+        /// <summary>
+        /// A bullet's launcher is the ShotBus of the gun that fired it; find the gun that owns it. A bullet can
+        /// tidy itself up in its own collision handler before ours runs, so fall back to the gun that fired last.
+        /// </summary>
         private static Firearm GunThatFired(Bullet bullet)
         {
             var launcher = bullet.m_launcher;
-            if (launcher == null)
-                return null;
-            foreach (var gun in Spawning.Spawner.GetFirearms())
+            if (launcher != null)
             {
-                var bus = gun.ShotBus;
-                if (bus != null && bus.Pointer == launcher.Pointer)
-                    return gun;
+                foreach (var gun in Spawning.Spawner.GetFirearms())
+                {
+                    var bus = gun.ShotBus;
+                    if (bus != null && bus.Pointer == launcher.Pointer)
+                        return gun;
+                }
             }
-            return null;
+            return _lastFired.Exists() && Time.time - _lastFiredAt < 2f ? _lastFired : null;
         }
+
+        private static Firearm _lastFired;
+        private static float _lastFiredAt;
 
         private void Raise<T>(Action<T> handlers, T value, string name)
         {
@@ -258,6 +265,11 @@ namespace FruktSharedLibrary.Objects
                 return;
             _hooked = true;
             GameEvents.Update += WatchHeldObject;
+            GameEvents.FirearmFired += gun =>
+            {
+                _lastFired = gun;
+                _lastFiredAt = Time.time;
+            };
             GameEvents.SandboxExited += () =>
             {
                 All.Clear();
