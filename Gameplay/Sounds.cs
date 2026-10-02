@@ -9,9 +9,21 @@ using UnityEngine;
 
 namespace FruktSharedLibrary.Gameplay
 {
+    /// <summary>Which of the game's mixer groups a sound plays through (see <see cref="Sounds.PlayClip"/>).</summary>
+    public enum SoundGroup
+    {
+        /// <summary>Things happening in the world. Slows down with slow motion, like gunshots and impacts.</summary>
+        World,
+        /// <summary>World sounds that keep normal speed in slow motion, like ambience and machines.</summary>
+        Ambient,
+        /// <summary>Interface sounds: menus and notifications.</summary>
+        Interface,
+    }
+
     /// <summary>
     /// Plays the game's own sound effects through its SFX service (correct mixer group, pooling and
-    /// slow-motion pitch). UI sounds are 2D; everything else is played in 3D at a position.
+    /// slow-motion pitch), and your own sounds with <see cref="PlayClip"/>. UI sounds are 2D; everything else is
+    /// played in 3D at a position.
     /// </summary>
     public static class Sounds
     {
@@ -51,6 +63,54 @@ namespace FruktSharedLibrary.Gameplay
                 }
             });
             return true;
+        }
+
+        /// <summary>
+        /// Plays your own sound (for example one from an asset bundle) through the game's mixer, so the player's
+        /// volume settings apply. With a position it's 3D; without, it's 2D. Returns the AudioSource so you can stop
+        /// it; one-shot sounds clean themselves up when they finish.
+        /// </summary>
+        /// <param name="group">Which of the game's mixer groups to use. By default, sounds with a position are
+        /// <see cref="SoundGroup.World"/> and sounds without one are <see cref="SoundGroup.Interface"/>.</param>
+        public static AudioSource PlayClip(AudioClip clip, Vector3? position = null, float volume = 1f, float pitch = 1f, bool loop = false,
+            SoundGroup? group = null)
+        {
+            if (clip == null)
+                throw new ArgumentNullException(nameof(clip));
+            var go = new GameObject("FruktSharedLibrary.Sound " + clip.name);
+            go.transform.position = position ?? LocalPlayer.CameraPosition;
+            var source = go.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.volume = Mathf.Max(0f, volume);
+            source.pitch = pitch;
+            source.loop = loop;
+            source.spatialBlend = position.HasValue ? 1f : 0f;
+            source.minDistance = 1f;
+            source.maxDistance = 60f;
+            source.rolloffMode = AudioRolloffMode.Logarithmic;
+            var mixerGroup = MixerGroup(group ?? (position.HasValue ? SoundGroup.World : SoundGroup.Interface));
+            if (mixerGroup != null)
+                source.outputAudioMixerGroup = mixerGroup;
+            source.Play();
+            if (!loop)
+                UnityEngine.Object.Destroy(go, clip.length / Mathf.Max(0.05f, Mathf.Abs(pitch)) + 0.2f);
+            return source;
+        }
+
+        private static readonly Dictionary<SoundGroup, UnityEngine.Audio.AudioMixerGroup> Groups = new();
+
+        /// <summary>The game's mixer group for a kind of sound (cached; looked up by name in the game's mixer).</summary>
+        private static UnityEngine.Audio.AudioMixerGroup MixerGroup(SoundGroup kind)
+        {
+            if (Groups.TryGetValue(kind, out var cached) && cached != null)
+                return cached;
+            string name = kind switch { SoundGroup.World => "TimeScaled", SoundGroup.Ambient => "Game", _ => "UI" };
+            foreach (var group in Resources.FindObjectsOfTypeAll<UnityEngine.Audio.AudioMixerGroup>())
+            {
+                if (group != null && group.name == name)
+                    return Groups[kind] = group;
+            }
+            return null;
         }
 
         /// <summary>True while an interface sound is playing (any instance of it).</summary>
