@@ -94,11 +94,11 @@ namespace FruktSharedLibrary.Internal
             });
 
             // A hinge spring pulls the door back to the middle.
-            doorJoint.SetHingeSpring(800f, 40f, 0f);
+            doorJoint.SetHingeSpring(60f, 8f, 0f);
             wheelJoint.SetMotor(0f);
             yield return Wait(2f);
             Check("Hinge spring pulls it back", Mathf.Abs(doorJoint.Angle) < 6f, doorJoint.Angle.ToString("0.0") + " degrees");
-            doorJoint.SetHingeSpring(800f, 40f, 20f);
+            doorJoint.SetHingeSpring(60f, 8f, 20f);
             yield return Wait(2f);
             Check("Hinge spring holds a target angle", Mathf.Abs(doorJoint.Angle - 20f) < 5f, doorJoint.Angle.ToString("0.0") + " degrees");
             Shot("joints");

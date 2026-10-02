@@ -118,7 +118,10 @@ f 2/1/6 3/4/6 7/3/6 6/2/6
             yield return Wait(1.5f);
 
             // Grab it with the game's cursor tool: float it in front of the camera and hold the mouse button.
-            spawned.transform.position = LocalPlayer.CameraPosition + LocalPlayer.Forward * 3f;
+            // Move it through the rigidbody: setting the transform of an interpolated body doesn't always stick.
+            body.position = LocalPlayer.CameraPosition + LocalPlayer.Forward * 3f;
+            spawned.transform.position = body.position;
+            Physics.SyncTransforms();
             body.useGravity = false;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
