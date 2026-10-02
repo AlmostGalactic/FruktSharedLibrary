@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using FruktSharedLibrary.Core;
+using FruktSharedLibrary.Internal;
 using MelonLoader;
 
 namespace FruktSharedLibrary.UI
@@ -14,7 +16,7 @@ namespace FruktSharedLibrary.UI
     //   LIBRARY SETTINGS   always last
     public static partial class ModMenu
     {
-        private static readonly Dictionary<MelonBase, ModMenuPage> ModPages = new();
+        private static readonly Dictionary<string, ModMenuPage> ModPages = new(StringComparer.OrdinalIgnoreCase);
         private static ModMenuPage _modsPage;
         private static string _treeSignature;
 
@@ -70,13 +72,29 @@ namespace FruktSharedLibrary.UI
         internal static ModMenuPage PageOfMod(MelonBase mod)
         {
             RefreshTree();
-            return mod != null && ModPages.TryGetValue(mod, out var page) ? page : null;
+            return mod?.Info?.Name != null && ModPages.TryGetValue(mod.Info.Name, out var page) ? page : null;
+        }
+
+        /// <summary>
+        /// Every mod listed under MODS: the ones the library checked at startup (including those that weren't
+        /// started), plus any running mod that added a page without being checked.
+        /// </summary>
+        private static List<LibraryModInfo> ListedMods()
+        {
+            var list = new List<LibraryModInfo>(ModGuard.All);
+            foreach (var melon in LibraryMods)
+            {
+                if (ModGuard.Find(melon) == null)
+                    list.Add(new LibraryModInfo { Melon = melon, Name = melon.Info?.Name ?? "?", Author = melon.Info?.Author, Version = melon.Info?.Version });
+            }
+            list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+            return list;
         }
 
         /// <summary>Rebuilds the generated pages when mods, their pages, or those pages' contents changed.</summary>
         internal static void RefreshTree()
         {
-            var mods = LibraryMods;
+            var mods = ListedMods();
             string signature = TreeSignature(mods);
             if (signature == _treeSignature && _modsPage != null)
                 return;
@@ -87,18 +105,42 @@ namespace FruktSharedLibrary.UI
             if (mods.Count == 0)
                 _modsPage.Label("No installed mod uses FruktSharedLibrary yet. Mods built on it show up here with their settings.");
             foreach (var mod in mods)
-                _modsPage.Link(mod.Info?.Name ?? "?", BuildModPage(mod));
+                _modsPage.Link(mod.Name + StatusSuffix(mod), BuildModPage(mod));
         }
 
-        private static ModMenuPage BuildModPage(MelonBase mod)
+        private static string StatusSuffix(LibraryModInfo mod) => mod.State switch
         {
-            if (!ModPages.TryGetValue(mod, out var page))
-                ModPages[mod] = page = new ModMenuPage(mod.Info?.Name ?? "?") { Owner = mod };
-            page.Clear();
-            string author = string.IsNullOrWhiteSpace(mod.Info?.Author) ? "" : $" by {mod.Info.Author}";
-            page.Label($"version {mod.Info?.Version}{author}");
+            LibraryModState.TurnedOff => " (off)",
+            LibraryModState.NeedsNewerLibrary => " (needs update)",
+            LibraryModState.DidNotStart => " (didn't start)",
+            _ => "",
+        };
 
-            var own = Pages.FindAll(p => p.Owner == mod && IsPageVisible(p));
+        private static ModMenuPage BuildModPage(LibraryModInfo mod)
+        {
+            if (!ModPages.TryGetValue(mod.Name, out var page))
+                ModPages[mod.Name] = page = new ModMenuPage(mod.Name) { Owner = mod.Melon };
+            page.Clear();
+            string author = string.IsNullOrWhiteSpace(mod.Author) ? "" : $" by {mod.Author}";
+            page.Label($"version {mod.Version}{author}");
+
+            if (mod.State == LibraryModState.NeedsNewerLibrary || mod.State == LibraryModState.DidNotStart)
+            {
+                page.Label("Not running: " + ModGuard.Problem(mod));
+                if (mod.Missing.Count > 0)
+                {
+                    int shown = Math.Min(mod.Missing.Count, 5);
+                    string more = mod.Missing.Count > shown ? $", and {mod.Missing.Count - shown} more" : "";
+                    page.Label("Missing: " + string.Join(", ", mod.Missing.Take(shown)) + more);
+                }
+            }
+            page.Toggle("Enabled", () => mod.WantsOn, on => FruktConfig.SetModDisabled(mod.Name, !on))
+                .WithTooltip("Mods are switched on and off when the game starts.");
+            page.Label("Restart the game to apply this.").OnlyWhen(() => mod.RestartNeeded);
+            if (mod.State != LibraryModState.Running)
+                return page;
+
+            var own = Pages.FindAll(p => p.Owner == mod.Melon && IsPageVisible(p));
             if (own.Count == 0)
             {
                 page.Label("This mod has no settings.");
@@ -117,15 +159,15 @@ namespace FruktSharedLibrary.UI
             return page;
         }
 
-        private static string TreeSignature(IReadOnlyList<MelonBase> mods)
+        private static string TreeSignature(IReadOnlyList<LibraryModInfo> mods)
         {
             var builder = new StringBuilder();
             foreach (var mod in mods)
             {
-                builder.Append(mod.Info?.Name).Append('[');
+                builder.Append(mod.Name).Append(':').Append(mod.State).Append('[');
                 foreach (var page in Pages)
                 {
-                    if (page.Owner == mod)
+                    if (mod.Melon != null && page.Owner == mod.Melon)
                         builder.Append(page.Title).Append(':').Append(page.Version).Append(IsPageVisible(page) ? '+' : '-').Append(';');
                 }
                 builder.Append(']');
