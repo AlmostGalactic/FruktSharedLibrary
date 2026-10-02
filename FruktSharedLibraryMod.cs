@@ -25,6 +25,7 @@ namespace FruktSharedLibrary
             FruktConfig.Initialize();
             LibraryPatches.Apply(HarmonyInstance);
             PauseMenu.Initialize();
+            GameEvents.SandboxExited += Objects.Joints.Clear;
             ModMenu.Initialize();
             BuiltInMenu.Register();
             Scheduler.Every(10f, ContextMenuCarrier.Cleanup);
@@ -51,7 +52,11 @@ namespace FruktSharedLibrary
 
         public override void OnFixedUpdate() => GameEvents.RaiseFixedUpdate();
 
-        public override void OnLateUpdate() => GameEvents.RaiseLateUpdate();
+        public override void OnLateUpdate()
+        {
+            Objects.Joints.Update();
+            GameEvents.RaiseLateUpdate();
+        }
 
         public override void OnGUI()
         {
