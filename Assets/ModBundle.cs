@@ -182,8 +182,8 @@ namespace FruktSharedLibrary.Assets
         }
 
         /// <summary>
-        /// Unloads the bundle. With <paramref name="unloadAssets"/>, everything loaded from it is destroyed too
-        /// (including objects in the world that use its meshes and textures).
+        /// Unloads the bundle. With <paramref name="unloadAssets"/>, the assets loaded from it are destroyed too, so
+        /// spawned copies lose their meshes and textures; delete those first.
         /// </summary>
         public void Unload(bool unloadAssets = false)
         {

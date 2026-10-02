@@ -100,6 +100,12 @@ namespace FruktSharedLibrary.Internal
                 var again = ModBundle.Load(TestBundlePath);
                 Check("A bundle can be loaded again after unloading", again != null && again.IsLoaded);
                 again?.Unload(true);
+
+                var fromBytes = ModBundle.Load(File.ReadAllBytes(TestBundlePath), "selftest-bytes");
+                Check("ModBundle.Load loads a bundle from bytes", fromBytes != null && fromBytes.IsLoaded && fromBytes.Contains("TestCrate"));
+                var prefab = fromBytes?.Load<GameObject>("TestCrate");
+                Check("Assets load from a bundle loaded from bytes", prefab != null);
+                fromBytes?.Unload(true);
             });
         }
     }
