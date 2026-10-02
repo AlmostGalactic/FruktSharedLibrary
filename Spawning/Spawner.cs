@@ -213,8 +213,9 @@ namespace FruktSharedLibrary.Spawning
         /// <param name="material">Defaults to a plain grey <see cref="Utilities.Meshes.CreateMaterial"/>.</param>
         /// <param name="mass">In kilograms.</param>
         /// <param name="physics">False for a static object with a collider but no rigidbody.</param>
+        /// <param name="impactSounds">Plays impact sounds when it hits things, like the game's props.</param>
         public static GameObject SpawnMesh(Mesh mesh, Vector3 position, Quaternion? rotation = null, Material material = null,
-            float mass = 10f, bool physics = true)
+            float mass = 10f, bool physics = true, bool impactSounds = true)
         {
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
@@ -230,6 +231,8 @@ namespace FruktSharedLibrary.Spawning
                 body.mass = Mathf.Max(0.01f, mass);
                 body.interpolation = RigidbodyInterpolation.Interpolate;
                 body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                if (impactSounds)
+                    Objects.ObjectEvents.For(go).ImpactSounds = true;
             }
             return go;
         }
