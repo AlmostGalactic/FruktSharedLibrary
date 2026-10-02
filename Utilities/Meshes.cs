@@ -144,6 +144,20 @@ namespace FruktSharedLibrary.Utilities
         /// <summary>The physics layer the game's props use (grabbable, shootable, collides with everything).</summary>
         public static int PropLayer => Template.Layer;
 
+        /// <summary>
+        /// Puts an object, and every child with a collider, on <see cref="PropLayer"/>, so the player can grab
+        /// and shoot it like the game's props.
+        /// </summary>
+        public static void UsePropLayer(GameObject root)
+        {
+            if (root == null)
+                return;
+            int layer = PropLayer;
+            root.layer = layer;
+            foreach (var collider in root.GetComponentsInChildren<Collider>(true))
+                collider.gameObject.layer = layer;
+        }
+
         // ------------------------------------------------------------ internals
 
         private static (int Layer, Shader Shader, int Scene) _template = (-1, null, -1);
