@@ -7,7 +7,7 @@
 | [World, player and sounds](world-and-player.md) | `World`, `LocalPlayer`, `Sounds` |
 | [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the body simulation, `Damage` |
 | [Spawning](spawning.md) | `Spawner`, `FirearmType`, firearm extensions, spawning your own models |
-| [Joints and object events](objects.md) | `Joints`, `JointHandle`, `ObjectEvents` |
+| [Joints, object events and builds](objects.md) | `Joints`, `JointHandle`, `ObjectEvents`, `Builds`, `Build` |
 | [Inventory, toolbar, tools and props](inventory.md) | `Inventory`, `InventoryItem`, `Toolbar`, `ModTool`, `ModProp` |
 | [Asset bundles](asset-bundles.md) | Making bundles in Unity, `ModBundle`, `Shaders` |
 | [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages, `PauseMenu`, switching mods off, version checks, the library's settings |

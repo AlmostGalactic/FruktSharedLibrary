@@ -48,9 +48,13 @@ Known rough edges, each enough for a patch:
 - Each bundle reload keeps the old version's assets in memory.
 - Prop holograms use the library's own see-through material, not the game's hologram look.
 
-## 0.3.0: ideas
+## 0.3.0: in progress
 
-Candidates for the next five. Nothing here is promised:
+Big features so far (it needs five):
+
+- [x] **Saving builds.** Objects and the joints between them, saved to files and spawned again in any map.
+
+Ideas for the rest. Nothing here is promised:
 
 - **A Unity mod kit.** A ready-made Unity project or package with a "build and copy to FRUKT" button, and a
   checker that warns about custom scripts, unsupported shaders and props without colliders before you build.
@@ -58,4 +62,3 @@ Candidates for the next five. Nothing here is promised:
 - **Self-tests for mods.** The library's in-game test tools (checks, screenshots, real clicks) opened up so mods
   can test themselves.
 - **Custom guns.** Weapons built on the game's own bullets and recoil.
-- **Props that stay.** Placed props that survive a map reset or a reload.

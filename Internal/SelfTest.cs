@@ -581,6 +581,23 @@ namespace FruktSharedLibrary.Internal
                     break;
                 yield return toolTest.Current;
             }
+            var buildsTest = TestBuilds();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = buildsTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Builds test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return buildsTest.Current;
+            }
             var inventoryTest = TestInventory();
             while (true)
             {

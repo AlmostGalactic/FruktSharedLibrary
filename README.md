@@ -16,6 +16,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
 - The inventory and the toolbar: read and fill the slots, and add your own tools and props to the terminal
 - Joints (welds, hinges, ropes, springs and more), and events for when objects collide, get grabbed or get shot
+- Saving builds (objects and the joints between them) to files, and spawning copies of them in any map
 - Asset bundles from Unity: prefabs, textures, materials and sounds, with materials switched to the game's shaders
 - A mod menu styled like the game's settings screens, with an entry for every mod that uses the library and a
   switch to turn each one off, also reachable from a MODS line on the main menu
@@ -74,7 +75,7 @@ Everything is documented in [`docs/`](docs/README.md):
 - [World, player and sounds](docs/world-and-player.md)
 - [Creatures and damage](docs/creatures.md)
 - [Spawning](docs/spawning.md)
-- [Joints and object events](docs/objects.md)
+- [Joints, object events and builds](docs/objects.md)
 - [Inventory, toolbar, tools and props](docs/inventory.md)
 - [Asset bundles](docs/asset-bundles.md)
 - [Mod menu and pause menu](docs/mod-menu.md)

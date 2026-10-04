@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Builds: `Builds.Capture` saves objects and the joints between them, like a car, and `Builds.Spawn` puts copies in
+  the world in any map. Builds go to JSON files with `Build.Save` and `Build.Load`. They hold mod props, the game's
+  own props and guns, and anything a mod adds with `Builds.AddKind`, and mods can keep their own extras with each
+  part and joint.
+- `ModProp.CopyOf` tells you which prop a placed object came from.
+
 ## 0.2.1
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Interop;
 using FruktSharedLibrary.Spawning;
@@ -32,6 +34,9 @@ namespace FruktSharedLibrary.Gameplay
         private bool _hologramFailed;
         private Bounds _bounds;
         private static Material _hologramMaterial;
+
+        // The copies props have put in the world, so a build can tell which prop each one is.
+        private static readonly Dictionary<IntPtr, (GameObject Copy, ModProp Prop)> Copies = new();
 
         internal ModProp(string name, Mesh mesh, Material material, float mass) : base(name, "Props")
         {
@@ -224,6 +229,12 @@ namespace FruktSharedLibrary.Gameplay
                 FruktLog.Error($"Placing '{Name}' failed", e);
                 return null;
             }
+            if (Copies.Count > 512)
+            {
+                foreach (var key in Copies.Where(c => !c.Value.Copy.Exists()).Select(c => c.Key).ToList())
+                    Copies.Remove(key);
+            }
+            Copies[placed.Pointer] = (placed, this);
             if (Placed != null)
             {
                 foreach (Action<GameObject> handler in Placed.GetInvocationList())
@@ -239,6 +250,20 @@ namespace FruktSharedLibrary.Gameplay
                 }
             }
             return placed;
+        }
+
+        /// <summary>The prop <paramref name="copy"/> was placed from, or null if it isn't a placed copy of one.</summary>
+        public static ModProp CopyOf(GameObject copy)
+        {
+            if (!copy.Exists() || !Copies.TryGetValue(copy.Pointer, out var entry))
+                return null;
+            // The game reuses the memory of destroyed objects, so check it's still the same object.
+            if (!entry.Copy.Exists() || entry.Copy.Pointer != copy.Pointer)
+            {
+                Copies.Remove(copy.Pointer);
+                return null;
+            }
+            return entry.Prop;
         }
 
         internal override void OnInput(ToolInput input, float value)

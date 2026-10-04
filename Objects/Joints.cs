@@ -199,6 +199,27 @@ namespace FruktSharedLibrary.Objects
 
         // ------------------------------------------------------------ internals
 
+        /// <summary>
+        /// Makes a joint again from saved settings (see <see cref="Builds"/>): a ConfigurableJoint on
+        /// <paramref name="a"/> set up exactly like the saved one, tracked like the joints made above.
+        /// </summary>
+        internal static JointHandle Restore(Rigidbody a, Rigidbody b, string kind, JointSettings settings)
+        {
+            if (a == null)
+                throw new ArgumentNullException(nameof(a));
+            var joint = a.gameObject.AddComponent<ConfigurableJoint>();
+            settings.ApplyTo(joint, b);
+            a.WakeUp();
+            if (b != null)
+                b.WakeUp();
+            var handle = new JointHandle(joint, a, b, kind);
+            if (kind == "hinge")
+                handle.StartHingeAngle(a.transform.TransformDirection(joint.axis), a.transform.TransformDirection(joint.secondaryAxis));
+            if (settings.LineThickness > 0f)
+                handle.ShowLine(settings.LineThickness, settings.LineColor);
+            return Track(handle);
+        }
+
         internal static void Update()
         {
             for (int i = Active.Count - 1; i >= 0; i--)
@@ -415,8 +436,12 @@ namespace FruktSharedLibrary.Objects
             return Joint.Cast<ConfigurableJoint>();
         }
 
+        /// <summary>The rope's drawn line, if it has one: its thickness and colour (for saving it in a build).</summary>
+        internal (float Thickness, Color Color)? Line { get; private set; }
+
         internal void ShowLine(float thickness, Color color)
         {
+            Line = (thickness, color);
             var go = new GameObject("FruktSharedLibrary.Rope");
             _line = go.AddComponent<LineRenderer>();
             _line.positionCount = 2;

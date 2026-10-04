@@ -1,4 +1,4 @@
-# Joints and object events
+# Joints, object events and builds
 
 `FruktSharedLibrary.Objects` is for building things out of physics objects: connecting them with joints, and
 reacting when they collide, get grabbed or get shot. It works on anything with a rigidbody: your own
@@ -91,3 +91,64 @@ events.Grabbed += () => Notifications.Show("Careful, it's fragile");
 ```
 
 Objects spawned with `Spawner.SpawnMesh` already have impact sounds turned on.
+
+## Builds
+
+A build is some objects and the joints between them, like a car made of a body, four wheels and their axles.
+`Builds` captures one, a `Build` can be saved to a file and loaded again, and `Builds.Spawn` puts copies of it in
+the world, in any map.
+
+```csharp
+// Save whatever the player is aiming at, and everything joined to it.
+string folder = Builds.Folder("MyMod");                       // UserData/MyMod/Builds
+if (LocalPlayer.Raycast(out var hit) && hit.rigidbody != null)
+    Builds.Capture(hit.rigidbody.gameObject, "Car").Save(Builds.PathFor(folder, "Car"));
+
+// Later: put it back in front of the player.
+var car = Build.Load(Builds.PathFor(folder, "Car"));
+var spot = LocalPlayer.GetPointInFront(4f);
+Builds.Spawn(car, spot, LocalPlayer.RotationFacingPlayer(spot));
+```
+
+| Member | Description |
+|--------|-------------|
+| `Builds.Capture(part, name)` | The object and everything joined to it, and everything joined to those: the whole contraption. |
+| `Builds.Capture(parts, name)` | Exactly these objects, and the joints among them. Nothing else is followed. |
+| `Builds.Spawn(build, position, rotation)` | Puts a copy in the world with its bottom at `position`, and joins it up like the original. Gives back a `BuildInstance` with the new objects (in the same order as `build.Parts`), the new joints, and any `Problems`. |
+| `build.Save(path)`, `Build.Load(path)` | A build in a file. `ToJson()` and `Build.FromJson(text)` do the same with text. |
+| `Builds.Folder(modName)`, `Builds.PathFor(folder, name)`, `Builds.Files(folder)` | Where to keep your mod's builds: a folder in UserData, the file for a name, and the builds in a folder, newest first. |
+| `build.Parts`, `build.Joints`, `build.Size`, `build.Skipped` | What's in it, how big it is, and what was joined to it but couldn't be saved. |
+
+What a build can hold:
+
+- Props made with `Inventory.AddProp`, by name. The prop's mod has to be installed to spawn the build again.
+- The game's own spawnable objects, like its props, by their prefab ID.
+- Anything else your mod makes, once you've told builds about it with
+  `Builds.AddKind(kind, idOf, spawn)`: `idOf` gives an ID for one of your objects (or null if it isn't one),
+  and `spawn` makes one again from that ID.
+
+People are left out. They're whole ragdolls, not single objects, so anything joined to a person is saved without
+them, and `build.Skipped` says so.
+
+Joints are saved with everything that makes them up: where they're attached, hinge axes and limits, motors and
+springs, rope lengths and how ropes look, and how strong they are. A joint that holds something to a point in the
+world moves with the copy.
+
+### Your mod's own extras
+
+If your mod adds things to objects that builds don't know about, keep them with the part or joint as text:
+
+```csharp
+Builds.PartSaving += (obj, part) =>
+{
+    if (IsGlowing(obj))
+        part.Data["glow"] = "on";
+};
+Builds.PartSpawned += (obj, part) =>
+{
+    if (part.Data.TryGetValue("glow", out var glow) && glow == "on")
+        MakeGlow(obj);
+};
+```
+
+`JointSaving` and `JointSpawned` do the same for joints. Handlers that throw are logged and don't stop the others.
