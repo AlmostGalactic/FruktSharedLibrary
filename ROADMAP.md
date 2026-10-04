@@ -34,9 +34,6 @@ Release steps:
 - [x] A full self-test run on the release build.
 - [x] Upload the DLL and XML docs to the GitHub release.
 
-Released with [Build Kit](https://github.com/AlmostGalactic/FruktBuildKit), a Garry's Mod style tool gun made with the
-library, as the showcase.
-
 ## 0.2.1: released
 
 - [x] The menu is called FSL Menu, so it can be told apart from FruitLib's.
