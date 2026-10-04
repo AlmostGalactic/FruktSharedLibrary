@@ -27,6 +27,9 @@ namespace FruktSharedLibrary.Internal
         private static readonly List<ModTool> Tools = new();
         private static readonly Dictionary<string, ModTool> ByTemplate = new();
         private static readonly Dictionary<ModTool, SerializedItemDescriptor> Cards = new();
+        private static readonly Dictionary<ModTool, GameObject> Templates = new();
+        private static readonly Dictionary<ModTool, Sprite> AutoIcons = new();
+        private static readonly HashSet<ModTool> IconsToDraw = new();
         private static GameObject _templates;
         private static bool _injected, _injectionFailed;
         private static Sprite _defaultIcon;
@@ -48,6 +51,7 @@ namespace FruktSharedLibrary.Internal
             if (Tools.Count == 0)
                 return;
             RegisterPending();
+            DrawPendingIcons();
             FollowHeld();
         }
 
@@ -176,31 +180,109 @@ namespace FruktSharedLibrary.Internal
             var template = new GameObject(name);
             template.transform.SetParent(_templates.transform, false);
             ModToolBehaviour.Prepare(template.AddComponent<ModToolBehaviour>());
-            if (tool.Model.Exists())
-            {
-                var model = Object.Instantiate(tool.Model, template.transform, false);
-                model.name = tool.Model.name;
-                model.transform.localPosition = tool.HeldPosition;
-                model.transform.localRotation = Quaternion.Euler(tool.HeldRotation);
-                model.transform.localScale *= tool.HeldScale;
-                model.SetActive(true);
-                Assets.Shaders.FixMaterials(model);
-                // In the hand it's only for show: no physics, or it would shove things the player walks past.
-                foreach (var collider in model.GetComponentsInChildren<Collider>(true))
-                    Object.Destroy(collider);
-                foreach (var body in model.GetComponentsInChildren<Rigidbody>(true))
-                    Object.Destroy(body);
-            }
+            PutModel(template, tool);
             ByTemplate[name] = tool;
+            Templates[tool] = template;
             return template;
         }
+
+        // The model is the only child of a tool's object, in the template and in the copies the toolbar makes.
+        private static void PutModel(GameObject root, ModTool tool)
+        {
+            for (int i = root.transform.childCount - 1; i >= 0; i--)
+                Object.DestroyImmediate(root.transform.GetChild(i).gameObject);
+            if (!tool.Model.Exists())
+                return;
+            var model = Object.Instantiate(tool.Model, root.transform, false);
+            model.name = tool.Model.name;
+            model.transform.localPosition = tool.HeldPosition;
+            model.transform.localRotation = Quaternion.Euler(tool.HeldRotation);
+            model.transform.localScale *= tool.HeldScale;
+            model.SetActive(true);
+            Assets.Shaders.FixMaterials(model);
+            // In the hand it's only for show: no physics, or it would shove things the player walks past.
+            foreach (var joint in model.GetComponentsInChildren<Joint>(true))
+                Object.DestroyImmediate(joint);
+            foreach (var body in model.GetComponentsInChildren<Rigidbody>(true))
+                Object.DestroyImmediate(body);
+            foreach (var collider in model.GetComponentsInChildren<Collider>(true))
+                Object.DestroyImmediate(collider);
+        }
+
+        /// <summary>
+        /// A tool's model (or a prop's mesh or prefab) changed after it was added: the hand, the copies already on
+        /// the toolbar and the automatic icon follow.
+        /// </summary>
+        internal static void ModelChanged(ModTool tool)
+        {
+            AutoIcons.Remove(tool);
+            if (Templates.TryGetValue(tool, out var template) && template.Exists())
+            {
+                try
+                {
+                    PutModel(template, tool);
+                    foreach (var copy in GameServices.FindObjects<ModToolBehaviour>(includeInactive: true))
+                    {
+                        if (copy.Exists() && ToolOf(copy.gameObject) == tool)
+                            PutModel(copy.gameObject, tool);
+                    }
+                }
+                catch (Exception e)
+                {
+                    FruktLog.Warning($"Changing the model of '{tool.Name}' failed: {e.Message}");
+                }
+            }
+            Refresh(tool);
+        }
+
+        /// <summary>The icon a tool shows: the mod's, else a picture of its model, else a plain square.</summary>
+        private static Sprite IconFor(ModTool tool)
+        {
+            if (tool.Icon.Exists())
+                return tool.Icon;
+            if (!AutoIcons.TryGetValue(tool, out var auto) || (auto != null && !auto.Exists()))
+            {
+                // The main menu's screen effects paint over every camera, so pictures are only taken in a map,
+                // which is the only place the terminal and toolbar exist anyway. Until then it's the plain square.
+                if (!GameState.InSandbox)
+                {
+                    IconsToDraw.Add(tool);
+                    return DefaultIcon;
+                }
+                auto = null;
+                try
+                {
+                    auto = tool.RenderThumbnail();
+                    if (auto.Exists())
+                        auto.hideFlags = HideFlags.HideAndDontSave;
+                }
+                catch (Exception e)
+                {
+                    FruktLog.Debug($"Drawing an icon for '{tool.Name}' failed: {e.Message}");
+                }
+                AutoIcons[tool] = auto;
+            }
+            return auto.Exists() ? auto : DefaultIcon;
+        }
+
+        private static void DrawPendingIcons()
+        {
+            if (IconsToDraw.Count == 0 || !GameState.InSandbox)
+                return;
+            var tools = new List<ModTool>(IconsToDraw);
+            IconsToDraw.Clear();
+            foreach (var tool in tools)
+                Refresh(tool);
+        }
+
+        internal static bool IsDefaultIcon(Sprite sprite) => sprite.Exists() && _defaultIcon.Exists() && sprite.Pointer == _defaultIcon.Pointer;
 
         private static SerializedItemDescriptor BuildCard(ModTool tool)
         {
             var icon = ScriptableObject.CreateInstance<SerializedIconData>();
             icon.name = tool.Name + " icon";
             icon.hideFlags = HideFlags.HideAndDontSave;
-            icon.m_sprite = tool.Icon ?? DefaultIcon;
+            icon.m_sprite = IconFor(tool);
             icon.m_offset = Vector2.zero;
             icon.m_scale = Vector2.one;
             icon.m_color = Color.white;
@@ -227,7 +309,7 @@ namespace FruktSharedLibrary.Internal
             {
                 var icon = card.m_iconData;
                 if (icon.Exists())
-                    icon.m_sprite = tool.Icon ?? DefaultIcon;
+                    icon.m_sprite = IconFor(tool);
                 var data = tool.Item?.Data.TryCast<GodInventoryItemData>();
                 if (data != null)
                     data._IconData_k__BackingField = card.IconData;

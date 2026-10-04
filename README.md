@@ -24,6 +24,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Your own lines in right-click menus, including drop-down groups
 - Notifications, pause-menu buttons and UI helpers that use the game's fonts and colours
 - Helpers for the IL2CPP problems that trip people up
+- A `dotnet new` template for new mods, and reloading of bundles and models while the game runs
 
 ## Installing
 

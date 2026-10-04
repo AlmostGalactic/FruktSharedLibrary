@@ -63,7 +63,8 @@ namespace FruktSharedLibrary.Internal
                 Check("It has its description", item.Description == tool.Description, item.Description);
                 Check("It has its card row", item.CardRows.Any(r => r.Key == "purpose" && r.Value == "testing"),
                     string.Join(", ", item.CardRows.Select(r => $"{r.Key}={r.Value}")));
-                Check("It has an icon", item.Icon != null);
+                string problem = IconProblem(item);
+                Check("Without an icon it gets a picture of its model", problem == null, problem ?? IconDetail(item));
             });
             if (item == null || !Toolbar.Available)
                 yield break;
@@ -119,6 +120,30 @@ namespace FruktSharedLibrary.Internal
                 Check("ModTool.LeftHold counts the seconds held", longestHold >= 0.5f, $"{longestHold:0.00}s");
                 Check("Letting go raises LeftRelease", ToolEvents.Contains("left release"), string.Join(", ", ToolEvents));
             });
+
+            // Swapping the model while the tool is in the player's hand.
+            var oldModel = tool.Model;
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.name = "Self-test tool model 2";
+            sphere.transform.localScale = Vector3.one * 0.12f;
+            sphere.SetActive(false);
+            Object.DontDestroyOnLoad(sphere);
+            var iconBefore = item.Icon;
+            Section("Mod tool model swap", () =>
+            {
+                tool.WithModel(sphere, tool.HeldPosition, tool.HeldRotation);
+                var held = tool.HeldObject;
+                Check("WithModel changes the model in the hand", held != null && held.transform.Find("Self-test tool model 2") != null
+                                                                  && held.transform.Find("Self-test tool model") == null && held.transform.childCount == 1,
+                    held == null ? "not held" : $"{held.transform.childCount} children");
+                Check("The new model has no collider", held != null && held.GetComponentInChildren<Collider>() == null);
+                Check("The icon follows the new model", item.Icon != null && iconBefore != null && item.Icon.Pointer != iconBefore.Pointer && IconProblem(item) == null);
+            });
+            yield return Wait(0.5f);
+            Shot("mod-tool-swapped");
+            yield return Wait(0.5f);
+            tool.WithModel(oldModel, tool.HeldPosition, tool.HeldRotation);
+            Object.Destroy(sphere);
 
             Section("Mod tool put away", () => Check("Selecting the cursor", Toolbar.Select(Toolbar.CursorSlot)));
             yield return Wait(1f);

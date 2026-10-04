@@ -264,6 +264,22 @@ namespace FruktSharedLibrary.Gameplay
             return (ModProp)Internal.ModItems.Add(new ModProp(name, prefab));
         }
 
+        /// <summary>
+        /// Adds a prop made from a prefab in a bundle, like <see cref="AddProp(string, GameObject)"/>, and keeps it up
+        /// to date when the bundle is reloaded (see <see cref="Assets.ModBundle.WatchForChanges"/>).
+        /// </summary>
+        public static ModProp AddProp(string name, Assets.ModBundle bundle, string prefab)
+        {
+            if (bundle == null)
+                throw new ArgumentNullException(nameof(bundle));
+            var source = bundle.Load<GameObject>(prefab);
+            if (source == null)
+                throw new ArgumentException($"Bundle '{bundle.Key}' has no prefab called '{prefab}'.", nameof(prefab));
+            var prop = AddProp(name, source);
+            prop.FollowBundle(bundle, b => prop.SwapPrefab(b.Load<GameObject>(prefab)));
+            return prop;
+        }
+
         /// <summary>The tools and props mods have added with <see cref="AddTool"/> and <see cref="AddProp(string, Mesh, Material, float)"/>.</summary>
         public static IReadOnlyList<ModTool> ModTools => Internal.ModItems.All;
 

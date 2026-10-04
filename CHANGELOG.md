@@ -12,6 +12,14 @@ Tested with MelonLoader 0.7.4 on the current FRUKT build
   model in the hand.
 - `Inventory.AddProp` adds your own prop, made from a mesh or a prefab. The player places it like the game's
   props: a hologram shows where it will go, left click puts it there and the mouse wheel turns it.
+- Mod tools and props without an icon get a picture of their model, taken once a map has loaded.
+  `Thumbnails.Render` takes such pictures for anything else.
+- Rebuild a bundle in Unity and see it in the running game: `ModBundle.WatchForChanges` (or `Reload`) loads the
+  new version, and props and tool models made from it switch over by themselves. `FileWatch` does the same for
+  any file, like an OBJ model.
+- A tool's model can now be changed at any time with `WithModel`, and a prop's with `SetMesh` and `SetPrefab`.
+- A `dotnet new fruktmod` template makes a ready-to-build mod project that references everything it needs and
+  builds into the game's Mods folder.
 - `Shaders.FixMaterial` now also replaces shaders the game has but can't draw, like the built-in Standard shader
   that `GameObject.CreatePrimitive` uses.
 

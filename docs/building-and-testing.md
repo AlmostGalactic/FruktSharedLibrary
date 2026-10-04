@@ -95,7 +95,7 @@ takes screenshots. That's how the mod menu was made to match the game's own scre
 FruktSharedLibraryMod.cs   MelonLoader entry point: update loop, GUI and hooks
 Core/                      services, events, game state, scheduler, safe patching, logging, preferences
 Interop/                   IL2CPP casts, collection copying, game event subscriptions
-Gameplay/                  World, LocalPlayer, Sounds
+Gameplay/                  World, LocalPlayer, Sounds, Inventory, Toolbar, mod tools and props
 Objects/                   Joints, ObjectEvents
 Assets/                    asset bundles and shader fixing
 Entities/                  Creatures and creature/limb/organ/LVA extensions
@@ -104,8 +104,9 @@ Spawning/                  Spawner and firearms
 UI/                        ModMenu, PauseMenu, Notifications, ContextMenus
 UI/Native/                 FruktTheme, FruktUi, the native mod menu
 Controls/                  keyboard and mouse input, key binds
-Utilities/                 layers, textures, meshes, dev tools
+Utilities/                 layers, textures, meshes, thumbnails, file watching, dev tools
 Internal/                  game hooks, trackers, built-in pages, self-test (not public API)
 tools/                     self-test input script, test bundle builder, compatibility test mod
+templates/FruktMod/        the dotnet new template for mods (not part of the library's build)
 docs/                      this documentation
 ```

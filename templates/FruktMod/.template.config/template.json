@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "AlmostGalactic",
+  "classifications": [ "FRUKT", "MelonLoader", "Mod" ],
+  "identity": "FruktSharedLibrary.ModTemplate",
+  "name": "FRUKT mod (FruktSharedLibrary)",
+  "description": "A MelonLoader mod for FRUKT that uses FruktSharedLibrary, set up to build straight into the game's Mods folder.",
+  "shortName": "fruktmod",
+  "sourceName": "FruktMod",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "symbols": {
+    "GameDir": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "Where FRUKT is installed. Leave it out to use the FRUKT_DIR environment variable, or Steam's default folder.",
+      "defaultValue": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\FRUKT",
+      "replaces": "FRUKT_GAME_DIR"
+    },
+    "Author": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "Your name, shown next to the mod in MelonLoader and the mod menu.",
+      "defaultValue": "Unknown",
+      "replaces": "MOD_AUTHOR"
+    }
+  }
+}

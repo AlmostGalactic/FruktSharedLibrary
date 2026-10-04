@@ -65,6 +65,26 @@ All three return null and log why if the bundle can't be loaded. Loading the sam
 that's already loaded, because Unity can't have the same bundle open twice. Load it once, when your mod starts,
 and keep it.
 
+## Reloading while the game runs
+
+While you're making your mod, you can rebuild a bundle in Unity and see the result without restarting the game:
+
+```csharp
+var bundle = ModBundle.Load(path).WatchForChanges();
+bundle.Reloaded += b => LoggerInstance.Msg("New version loaded");
+```
+
+`WatchForChanges` checks the file twice a second and reloads the bundle once a new version has finished being
+written. `Reload()` does it once, when you choose. After a reload:
+
+- `Load` gives the new versions of the assets. Load what you need again in a `Reloaded` handler.
+- Props made with `Inventory.AddProp(name, bundle, prefab)` and tools given a model with
+  `WithModel(bundle, prefab)` switch to the new prefab by themselves, icons included.
+- Things you already spawned stay as they were, with the old meshes and textures.
+
+Only bundles loaded from a file can be reloaded, not ones from bytes or from inside your DLL. Each reload keeps
+the old version's assets in memory, so it's a tool for while you work, not for a released mod.
+
 ## Using what's in it
 
 | Member | Description |
@@ -74,7 +94,8 @@ and keep it.
 | `Contains(name)` | Whether the bundle has an asset by that name. |
 | `AssetNames` | Everything in the bundle, as the full paths Unity uses. |
 | `Unload(unloadAssets = false)` | Unloads the bundle. With `true`, the assets you loaded from it are destroyed too, so spawned copies lose their meshes and textures. Delete those first. |
-| `IsLoaded`, `Key`, `Bundle` | Its state, where it came from, and the Unity `AssetBundle`. |
+| `Reload()`, `WatchForChanges()`, `Reloaded`, `IsWatching` | [Reloading](#reloading-while-the-game-runs) after you rebuild it. |
+| `IsLoaded`, `Key`, `FromFile`, `Bundle` | Its state, where it came from, and the Unity `AssetBundle`. |
 | `ModBundle.All` | Every bundle that's loaded. |
 
 Names don't care about case, and can be the full path (`assets/mymod/crate.prefab`), the file name

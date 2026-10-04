@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FruktSharedLibrary.Core;
+using FruktSharedLibrary.Interop;
 using UnityEngine;
 
 namespace FruktSharedLibrary.Gameplay
@@ -39,7 +40,10 @@ namespace FruktSharedLibrary.Gameplay
         /// <summary>The text on its card in the terminal.</summary>
         public string Description { get; private set; } = "";
 
-        /// <summary>Its icon in the terminal and on the toolbar. A plain one is used if this is null.</summary>
+        /// <summary>
+        /// The icon the mod gave it with <see cref="WithIcon"/>. Without one, the terminal and toolbar show a picture
+        /// of its model (a plain square if it has no model).
+        /// </summary>
         public Sprite Icon { get; private set; }
 
         /// <summary>What the player sees in their hand. Nothing (an empty hand) if this is null.</summary>
@@ -106,18 +110,54 @@ namespace FruktSharedLibrary.Gameplay
         /// <summary>
         /// Sets what the player sees in their hand: a copy of <paramref name="model"/> (a prefab from a
         /// <see cref="Assets.ModBundle"/>, or any GameObject), placed relative to where the game holds its own items.
-        /// Set it before the game starts; the model is copied when the tool is added to the inventory.
+        /// It can be changed at any time, also while the player holds it.
         /// </summary>
         public ModTool WithModel(GameObject model, Vector3 position = default, Vector3 rotation = default, float scale = 1f)
         {
-            if (Registered)
-                FruktLog.Warning($"'{Name}' is already in the inventory, so its model can't change any more.");
+            FollowBundle(null, null);
+            SetModel(model, position, rotation, scale);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the model in the hand to a prefab from a bundle, and keeps it up to date when the bundle is reloaded
+        /// (see <see cref="Assets.ModBundle.WatchForChanges"/>).
+        /// </summary>
+        public ModTool WithModel(Assets.ModBundle bundle, string prefab, Vector3 position = default, Vector3 rotation = default, float scale = 1f)
+        {
+            if (bundle == null)
+                throw new ArgumentNullException(nameof(bundle));
+            SetModel(bundle.Load<GameObject>(prefab), position, rotation, scale);
+            FollowBundle(bundle, b => SetModel(b.Load<GameObject>(prefab), HeldPosition, HeldRotation, HeldScale));
+            return this;
+        }
+
+        private void SetModel(GameObject model, Vector3 position, Vector3 rotation, float scale)
+        {
             Model = model;
             HeldPosition = position;
             HeldRotation = rotation;
             HeldScale = scale;
-            return this;
+            if (Registered)
+                Internal.ModItems.ModelChanged(this);
         }
+
+        private Assets.ModBundle _source;
+        private Action<Assets.ModBundle> _onSourceReloaded;
+
+        // What the item is made of comes from this bundle: follow it when it's reloaded. One bundle at a time.
+        internal void FollowBundle(Assets.ModBundle bundle, Action<Assets.ModBundle> onReloaded)
+        {
+            if (_source != null)
+                _source.Reloaded -= _onSourceReloaded;
+            _source = bundle;
+            _onSourceReloaded = onReloaded;
+            if (_source != null)
+                _source.Reloaded += _onSourceReloaded;
+        }
+
+        /// <summary>A picture of the item for its automatic icon, or null.</summary>
+        internal virtual Sprite RenderThumbnail() => Model.Exists() ? Utilities.Thumbnails.Render(Model) : null;
 
         // ------------------------------------------------------------ events
 

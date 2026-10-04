@@ -110,6 +110,32 @@ A few things about the OBJ loading:
 
 To put a mesh in the world, use [`Spawner.SpawnMesh`](spawning.md#your-own-models).
 
+## Thumbnails
+
+Pictures of 3D models on a transparent background, for icons. Mod tools and props without an icon get one
+automatically.
+
+| Member | Description |
+|--------|-------------|
+| `Render(gameObject, size = 128)` | A sprite of a model or prefab, seen from the front, a little above and to the side. |
+| `Render(mesh, material = null, size = 128)` | The same for a mesh. |
+
+Both return null if there's nothing to draw. Call them in a map: on the main menu the game's screen effects cover
+the picture, and you get null.
+
+## FileWatch
+
+Runs code when a file changes, so you can reload models, textures or settings while the game runs.
+
+```csharp
+var watch = FileWatch.Start(path, () => LoggerInstance.Msg("It changed"));
+watch.Stop();
+```
+
+The check runs on the main thread twice a second, so the callback can use the game directly. It waits until the
+file has stopped changing, so it doesn't read a file that's still being written. For asset bundles,
+[`WatchForChanges`](asset-bundles.md#reloading-while-the-game-runs) does this for you.
+
 ## DevTools
 
 For finding your way around the game's objects. These print to the MelonLoader console.

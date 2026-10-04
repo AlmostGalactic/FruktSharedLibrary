@@ -3,9 +3,37 @@
 You'll need FRUKT with MelonLoader 0.7 or newer, the .NET SDK (6 or newer), and `FruktSharedLibrary.dll` in
 `FRUKT/Mods`. Start the game once after installing MelonLoader so it generates `MelonLoader/Il2CppAssemblies`.
 
+## The quick way: the mod template
+
+The library comes with a `dotnet new` template that sets up everything below for you. Install it once from a copy
+of this repository:
+
+```
+dotnet new install path\to\FruktSharedLibrary\templates\FruktMod
+```
+
+Then make a mod:
+
+```
+dotnet new fruktmod -n MyMod --GameDir "D:\SteamLibrary\steamapps\common\FRUKT" --Author "Your name"
+cd MyMod
+dotnet build
+```
+
+The build puts `MyMod.dll` straight into `FRUKT\Mods`. The project:
+
+- references the library, MelonLoader and every game assembly, so you never have to add one by hand
+- finds the game in the `FRUKT_DIR` environment variable if it's set, otherwise in the folder you gave
+  `--GameDir` (Steam's default folder if you didn't)
+- stops with a clear message if it can't find the game or the library
+- starts you off with a mod menu page and a tool in the terminal
+
+Build with `-p:CopyToGameMods=false` to leave the Mods folder alone. To remove the template again:
+`dotnet new uninstall path\to\FruktSharedLibrary\templates\FruktMod`.
+
 ## Project setup
 
-Make a class library that targets `net6.0`, and reference the library, MelonLoader and the game assemblies:
+If you'd rather set up the project yourself, make a class library that targets `net6.0`, and reference the library, MelonLoader and the game assemblies:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">

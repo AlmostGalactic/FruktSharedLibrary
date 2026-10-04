@@ -46,16 +46,16 @@ namespace FruktSharedLibrary.Gameplay
         }
 
         /// <summary>The mesh it's made of, for a prop made from a mesh. Null for one made from a prefab.</summary>
-        public Mesh Mesh { get; }
+        public Mesh Mesh { get; private set; }
 
         /// <summary>The material of a prop made from a mesh (null for the default grey one).</summary>
-        public Material Material { get; }
+        public Material Material { get; private set; }
 
         /// <summary>How heavy a prop made from a mesh is, in kilograms.</summary>
         public float Mass { get; }
 
         /// <summary>The prefab copied for each placed prop, for one made from a prefab. Null for one made from a mesh.</summary>
-        public GameObject Prefab { get; }
+        public GameObject Prefab { get; private set; }
 
         /// <summary>How far away the player can place it, in metres. Further than that, it's put in front of them.</summary>
         public float Reach { get; private set; } = 30f;
@@ -115,6 +115,54 @@ namespace FruktSharedLibrary.Gameplay
             Placed += action;
             return this;
         }
+
+        /// <summary>
+        /// Switches it to another mesh (and material, if you give one), for example after reloading an OBJ file
+        /// with <see cref="FileWatch"/>. The hologram and the icon follow; copies already placed stay as they are.
+        /// </summary>
+        public ModProp SetMesh(Mesh mesh, Material material = null)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+            FollowBundle(null, null);
+            Mesh = mesh;
+            if (material != null)
+                Material = material;
+            Prefab = null;
+            Changed();
+            return this;
+        }
+
+        /// <summary>Switches it to another prefab. The hologram and the icon follow; copies already placed stay as they are.</summary>
+        public ModProp SetPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+                throw new ArgumentNullException(nameof(prefab));
+            FollowBundle(null, null);
+            SwapPrefab(prefab);
+            return this;
+        }
+
+        internal void SwapPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+                return;
+            Prefab = prefab;
+            Mesh = null;
+            Changed();
+        }
+
+        private void Changed()
+        {
+            _bounds = default;
+            HideHologram();
+            _hologramFailed = false;
+            if (Registered)
+                Internal.ModItems.ModelChanged(this);
+        }
+
+        internal override Sprite RenderThumbnail()
+            => Prefab.Exists() ? Thumbnails.Render(Prefab) : Mesh.Exists() ? Thumbnails.Render(Mesh, Material) : null;
 
         // ------------------------------------------------------------ placing
 

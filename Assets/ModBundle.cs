@@ -27,11 +27,20 @@ namespace FruktSharedLibrary.Assets
 
         private readonly Dictionary<string, string> _names = new(StringComparer.OrdinalIgnoreCase);
 
-        private ModBundle(string key, AssetBundle bundle)
+        private Utilities.FileWatch _watch;
+
+        private ModBundle(string key, AssetBundle bundle, bool fromFile)
         {
             Key = key;
+            FromFile = fromFile;
+            Index(bundle);
+        }
+
+        private void Index(AssetBundle bundle)
+        {
             Bundle = bundle;
             AssetNames = BundleNative.GetAllAssetNames(bundle);
+            _names.Clear();
             foreach (var path in AssetNames)
             {
                 // Find assets by full path ("assets/mymod/crate.prefab"), file name ("crate.prefab") or plain name ("crate").
@@ -49,7 +58,21 @@ namespace FruktSharedLibrary.Assets
         public AssetBundle Bundle { get; private set; }
 
         /// <summary>Every asset in the bundle, as the full lower-case paths Unity uses ("assets/mymod/crate.prefab").</summary>
-        public IReadOnlyList<string> AssetNames { get; }
+        public IReadOnlyList<string> AssetNames { get; private set; }
+
+        /// <summary>Whether it was loaded from a file (so it can be reloaded), not from bytes or your DLL.</summary>
+        public bool FromFile { get; }
+
+        /// <summary>
+        /// The bundle was loaded again from its file (see <see cref="Reload"/> and <see cref="WatchForChanges"/>).
+        /// Load your assets again: <see cref="Load{T}"/> now gives the new versions. Tools and props made from it
+        /// with <see cref="Gameplay.Inventory.AddProp(string, ModBundle, string)"/> or
+        /// <see cref="Gameplay.ModTool.WithModel(ModBundle, string, Vector3, Vector3, float)"/> update themselves.
+        /// </summary>
+        public event Action<ModBundle> Reloaded;
+
+        /// <summary>Whether <see cref="WatchForChanges"/> is on.</summary>
+        public bool IsWatching => _watch != null && _watch.IsWatching;
 
         /// <summary>True until <see cref="Unload"/> is called.</summary>
         public bool IsLoaded => Bundle != null && Bundle.m_CachedPtr != IntPtr.Zero;
@@ -72,7 +95,7 @@ namespace FruktSharedLibrary.Assets
                 FruktLog.Warning($"Asset bundle '{full}' doesn't exist.");
                 return null;
             }
-            return Register(full, Try(() => BundleNative.LoadFromFile(full), full));
+            return Register(full, Try(() => BundleNative.LoadFromFile(full), full), true);
         }
 
         /// <summary>Loads a bundle from bytes you already have, under a name of your choice.</summary>
@@ -84,7 +107,7 @@ namespace FruktSharedLibrary.Assets
                 throw new ArgumentException("Give the bundle a name.", nameof(name));
             if (Loaded.TryGetValue(name, out var existing) && existing.IsLoaded)
                 return existing;
-            return Register(name, Try(() => BundleNative.LoadFromMemory(data), name));
+            return Register(name, Try(() => BundleNative.LoadFromMemory(data), name), false);
         }
 
         /// <summary>
@@ -187,11 +210,76 @@ namespace FruktSharedLibrary.Assets
         /// </summary>
         public void Unload(bool unloadAssets = false)
         {
+            _watch?.Stop();
+            _watch = null;
             if (!IsLoaded)
                 return;
             BundleNative.Unload(Bundle, unloadAssets);
             Bundle = null;
             Loaded.Remove(Key);
+        }
+
+        // ------------------------------------------------------------ reloading
+
+        /// <summary>
+        /// Loads the bundle again from its file, after you've rebuilt it in Unity, and raises <see cref="Reloaded"/>.
+        /// What you already loaded or spawned from the old one keeps working; it isn't updated. Only bundles loaded
+        /// from a file can be reloaded. Returns false if the new file can't be loaded (the log says why); the
+        /// bundle is then unloaded until a reload works.
+        /// </summary>
+        public bool Reload()
+        {
+            if (!FromFile)
+            {
+                FruktLog.Warning($"Bundle '{Key}' was loaded from bytes, so it can't be reloaded.");
+                return false;
+            }
+            // Unity can't have two copies of a bundle open, so the old one goes first. Its assets stay in memory
+            // (unloadAssets: false), so what was spawned from it doesn't lose its meshes and textures.
+            if (IsLoaded)
+                BundleNative.Unload(Bundle, false);
+            Bundle = null;
+            var fresh = Try(() => BundleNative.LoadFromFile(Key), Key);
+            if (fresh == null)
+            {
+                FruktLog.Warning($"Reloading bundle '{Key}' failed; it stays unloaded until the file can be loaded again.");
+                return false;
+            }
+            Index(fresh);
+            Loaded[Key] = this;
+            FruktLog.Msg($"Reloaded asset bundle '{System.IO.Path.GetFileName(Key)}' ({AssetNames.Count} assets).");
+            if (Reloaded != null)
+            {
+                foreach (Action<ModBundle> handler in Reloaded.GetInvocationList())
+                {
+                    try
+                    {
+                        handler(this);
+                    }
+                    catch (Exception e)
+                    {
+                        FruktLog.Error($"A Reloaded handler of bundle '{Key}' threw", e);
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Reloads the bundle by itself whenever its file changes, so you can rebuild it in Unity and see the result
+        /// without restarting the game. Meant for while you're making your mod; it checks the file twice a second.
+        /// Returns the bundle, for chaining after <see cref="Load(string)"/>.
+        /// </summary>
+        public ModBundle WatchForChanges()
+        {
+            if (!FromFile)
+            {
+                FruktLog.Warning($"Bundle '{Key}' was loaded from bytes, so there's no file to watch.");
+                return this;
+            }
+            if (!IsWatching)
+                _watch = Utilities.FileWatch.Start(Key, () => Reload());
+            return this;
         }
 
         // ------------------------------------------------------------ internals
@@ -226,7 +314,7 @@ namespace FruktSharedLibrary.Assets
             }
         }
 
-        private static ModBundle Register(string key, AssetBundle bundle)
+        private static ModBundle Register(string key, AssetBundle bundle, bool fromFile)
         {
             if (bundle == null)
             {
@@ -234,7 +322,7 @@ namespace FruktSharedLibrary.Assets
                                  "or another bundle with the same contents is already loaded.");
                 return null;
             }
-            var loaded = new ModBundle(key, bundle);
+            var loaded = new ModBundle(key, bundle, fromFile);
             Loaded[key] = loaded;
             FruktLog.Debug($"Loaded asset bundle '{key}' ({loaded.AssetNames.Count} assets)");
             return loaded;

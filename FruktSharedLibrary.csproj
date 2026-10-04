@@ -32,6 +32,9 @@
   <ItemGroup>
     <!-- Unity editor scripts for building the self-test's asset bundle; they belong to a Unity project, not this one. -->
     <Compile Remove="tools\**" />
+    <!-- The dotnet new template for mods; it's its own project. -->
+    <Compile Remove="templates\**" />
+    <None Remove="templates\**" />
   </ItemGroup>
 
   <ItemGroup>

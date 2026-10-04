@@ -68,8 +68,9 @@ goes under Etc and the log says so.
 |-------|-------------|
 | `WithDescription(text)` | The text on its card. |
 | `WithCard(key, value)` | A row on its card, like ("range", "40 m"). |
-| `WithIcon(sprite)` | Its icon in the terminal and on the toolbar. Without one it gets a plain square. Can be changed at any time. |
-| `WithModel(prefab, position, rotation, scale)` | What the player sees in their hand, relative to where the game holds its own items. Without one the hand is empty. Set it before the item is added to the inventory. The copy in the hand has no colliders or rigidbodies, and its materials are switched to the game's shaders. |
+| `WithIcon(sprite)` | Its icon in the terminal and on the toolbar. Without one it gets a picture of its model (see below), or a plain square if it has no model. Can be changed at any time. |
+| `WithModel(prefab, position, rotation, scale)` | What the player sees in their hand, relative to where the game holds its own items. Without one the hand is empty. The copy in the hand has no colliders or rigidbodies, and its materials are switched to the game's shaders. It can be changed at any time, even while the player holds the tool. |
+| `WithModel(bundle, prefab, position, rotation, scale)` | The same with a prefab from a bundle, kept up to date when the bundle is [reloaded](asset-bundles.md#reloading-while-the-game-runs). |
 
 | Event | When |
 |-------|------|
@@ -81,6 +82,18 @@ goes under Etc and the log says so.
 
 `OnLeftClick`, `OnRightClick`, `OnScroll` and `OnHeld` subscribe and return the tool, for chaining. A handler that
 throws is logged and doesn't stop the others.
+
+### Icons
+
+A tool or prop without an icon of its own gets a picture of its model, on a transparent background, the first
+time a map loads (until then, and if the picture can't be taken, it's a plain square). The picture is taken again
+when the model, mesh or prefab changes. Pass your own with `WithIcon` to skip all that. To take pictures of models
+yourself, use [`Thumbnails`](interop-and-utilities.md#thumbnails).
+
+A new icon shows in the terminal straight away. A toolbar slot that already holds the item can keep showing the
+old one.
+
+### What else a tool has
 
 `IsHeld` and `HeldObject` tell you whether the player is holding it and give you the copy in their hand.
 `Registered` turns true once it's in the inventory and `Item` is then its `InventoryItem`, so you can put it on
@@ -98,9 +111,12 @@ Inventory.AddProp("Barrel", barrel, Meshes.CreateMaterial(color: Color.red), mas
     .WithDescription("A red barrel.")
     .WithCard("size", "1 m");
 
-Inventory.AddProp("Crate", bundle.Load<GameObject>("Crate"))
+Inventory.AddProp("Crate", bundle, "Crate")
     .OnPlaced(crate => ObjectEvents.For(crate).ImpactSounds = true);
 ```
+
+`AddProp(name, bundle, prefab)` takes the prefab from a bundle and follows it when the bundle is
+[reloaded](asset-bundles.md#reloading-while-the-game-runs). `AddProp(name, prefab)` takes any GameObject.
 
 - From a mesh, each copy is a physics object like `Spawner.SpawnMesh` makes: the player can grab, throw and shoot
   it.
@@ -119,6 +135,15 @@ A `ModProp` is a `ModTool`, so it has all of the above, plus:
 | `Turn`, `WithTurnStep(degrees)` | How far the wheel has turned it, and how much one notch turns it (15 degrees). |
 | `Reach`, `WithReach(metres)` | How far away it can be placed (30 m). |
 | `Mesh`, `Material`, `Mass`, `Prefab` | What it's made of. |
+| `SetMesh(mesh, material)`, `SetPrefab(prefab)` | Switches what it's made of. The hologram and the icon follow; copies already placed stay as they are. |
+
+To work on a model without restarting the game, watch its file and swap it in when it changes:
+
+```csharp
+string path = Path.Combine(MelonEnvironment.UserDataDirectory, "barrel.obj");
+var barrel = Inventory.AddProp("Barrel", Meshes.LoadObj(path));
+FileWatch.Start(path, () => barrel.SetMesh(Meshes.LoadObj(path)));
+```
 
 ## Living with other mods
 
