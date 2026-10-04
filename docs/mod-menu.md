@@ -36,7 +36,7 @@ something this version of the library doesn't have (because it was built for a n
 start that mod, instead of letting it crash halfway through. When a map opens, a notification says which mod was
 turned off and which version it needs:
 
-> Bigger Guns is turned off: it needs FruktSharedLibrary 0.2.0 or newer, and this is 0.1.5.
+> Bigger Guns is turned off: it needs FruktSharedLibrary 0.3.0 or newer, and this is 0.2.0.
 
 The mod's entry under Mods is marked "(needs update)" and lists what's missing. Mods that MelonLoader itself
 refused to start, for example because another mod they need isn't installed, are marked "(didn't start)", and

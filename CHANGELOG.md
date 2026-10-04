@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build
 

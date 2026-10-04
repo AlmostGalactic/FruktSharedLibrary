@@ -11,9 +11,9 @@
 Whatever the size, a release only goes out when the in-game self-test passes in full (see
 [Building and testing](docs/building-and-testing.md)), and the changelog says what changed.
 
-## 0.2.0: in progress
+## 0.2.0: released
 
-The big features so far. That's six, so it meets the bar of five:
+The big features. That's six, so it meets the bar of five:
 
 - [x] **Inventory and toolbar.** Read the terminal's items and categories, and read, fill, select and empty the
   toolbar's slots, with events.
@@ -28,11 +28,14 @@ The big features so far. That's six, so it meets the bar of five:
 
 Also in it: `Shaders.FixMaterial` handles the built-in Standard shader, which drew nothing.
 
-Left to do before releasing:
+Release steps:
 
-- [ ] Set the version to 0.2.0 (`FruktSharedLibraryMod.Version`) and turn the changelog's Unreleased section into 0.2.0.
-- [ ] A full self-test run on the release build.
-- [ ] Upload the DLL and XML docs to the GitHub release.
+- [x] Set the version to 0.2.0 (`FruktSharedLibraryMod.Version`) and turn the changelog's Unreleased section into 0.2.0.
+- [x] A full self-test run on the release build.
+- [x] Upload the DLL and XML docs to the GitHub release.
+
+Released with [Build Kit](https://github.com/AlmostGalactic/FruktBuildKit), a Garry's Mod style tool gun made with the
+library, as the showcase.
 
 ## 0.2.x: patch candidates
 
