@@ -234,7 +234,37 @@ namespace FruktSharedLibrary.Gameplay
             return Internal.ModItems.Add(new ModTool(name, string.IsNullOrWhiteSpace(category) ? "Tools" : category));
         }
 
-        /// <summary>The tools mods have added with <see cref="AddTool"/>.</summary>
+        /// <summary>
+        /// Adds a prop made from a mesh (for example one from <see cref="Utilities.Meshes.LoadObj"/>) to the
+        /// inventory, under Props. The player places it like the game's props; each copy is a physics object they
+        /// can grab, throw and shoot. Call it from <c>OnInitializeMelon</c>, like <see cref="AddTool"/>.
+        /// </summary>
+        /// <param name="material">Defaults to a plain grey <see cref="Utilities.Meshes.CreateMaterial"/>.</param>
+        /// <param name="mass">In kilograms.</param>
+        public static ModProp AddProp(string name, Mesh mesh, Material material = null, float mass = 10f)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("A prop needs a name.", nameof(name));
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+            return (ModProp)Internal.ModItems.Add(new ModProp(name, mesh, material, mass));
+        }
+
+        /// <summary>
+        /// Adds a prop made from a prefab (for example from a <see cref="Assets.ModBundle"/>) to the inventory, under
+        /// Props. Each placed copy is the prefab as it is, on the props' layer: give it a Rigidbody and colliders if
+        /// the player should be able to grab and throw it.
+        /// </summary>
+        public static ModProp AddProp(string name, GameObject prefab)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("A prop needs a name.", nameof(name));
+            if (prefab == null)
+                throw new ArgumentNullException(nameof(prefab));
+            return (ModProp)Internal.ModItems.Add(new ModProp(name, prefab));
+        }
+
+        /// <summary>The tools and props mods have added with <see cref="AddTool"/> and <see cref="AddProp(string, Mesh, Material, float)"/>.</summary>
         public static IReadOnlyList<ModTool> ModTools => Internal.ModItems.All;
 
         /// <summary>Whether the terminal (the inventory screen) is open.</summary>

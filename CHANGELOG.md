@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Inventory` lists the terminal's items and categories (other mods' items too), and opens and closes the terminal.
+- `Toolbar` reads, fills, selects and empties the slots, gives you the object in the player's hand, and has
+  events for items being added, removed and picked. It counts the slots other mods add.
+- `Inventory.AddTool` adds your own item to the terminal. While the player holds it you get the mouse buttons
+  (click, hold, release, wheel) and selected/put-away events. It can have a description, card rows, an icon and a
+  model in the hand.
+- `Inventory.AddProp` adds your own prop, made from a mesh or a prefab. The player places it like the game's
+  props: a hologram shows where it will go, left click puts it there and the mouse wheel turns it.
+- `Shaders.FixMaterial` now also replaces shaders the game has but can't draw, like the built-in Standard shader
+  that `GameObject.CreatePrimitive` uses.
+
 ## 0.1.5
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

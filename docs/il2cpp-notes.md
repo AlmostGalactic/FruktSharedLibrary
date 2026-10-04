@@ -74,6 +74,14 @@ Unity leaves out whatever a game doesn't use when it builds it. FRUKT's build ha
 `HingeJoint` is there but without its limits, motor or spring. Code that uses them compiles fine and then fails
 in the game. `ConfigurableJoint` can do everything those can, which is why every joint in `Joints` is one.
 
+## Built-in pipeline shaders draw nothing
+
+FRUKT uses URP. The build still has some of Unity's built-in pipeline shaders, like `Standard`, which
+`GameObject.CreatePrimitive` gives its cubes and spheres. They report `isSupported` as true, but URP draws
+nothing with them, so the object is there and invisible. `Shaders.FixMaterial` and `Shaders.FixMaterials` switch
+them to URP Lit and keep the colour and texture. Bundle assets, tool models and prefab props get this done for
+you.
+
 ## Bullets are physical objects
 
 The game's bullets are real rigidbodies that fly and collide, not raycasts. So a shot hitting something arrives
@@ -95,6 +103,8 @@ The ones found so far:
 
 - `AssetBundle.LoadFromFile` and `AssetBundle.LoadFromMemory`
 - `AudioClip.SetData`, so sounds can't be made in code
+- `Material.SetOverrideTag`. You rarely need it: URP decides whether a material is drawn as transparent from
+  its render queue.
 
 The library loads bundles by calling Unity's native functions directly: it looks them up with
 `IL2CPP.ResolveICall`, passes the path or bytes as a pinned pointer and length, and turns the handle that comes

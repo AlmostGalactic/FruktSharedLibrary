@@ -61,6 +61,7 @@ namespace FruktSharedLibrary.Internal
             FruktLog.ForceDebug = true;
             FruktLog.Msg("[SelfTest] Enabled. The test map loads automatically from the main menu.");
             AddTestTool();
+            AddTestProp();
             LogUiSounds();
             GameEvents.MainMenuEntered += OnMainMenu;
             GameEvents.SandboxReady += OnSandboxReady;

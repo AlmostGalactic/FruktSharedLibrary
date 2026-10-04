@@ -8,7 +8,7 @@ namespace FruktSharedLibrary.Gameplay
     /// <summary>
     /// An item a mod adds to the inventory. It's listed in the terminal like the game's own items, the player puts it
     /// on the toolbar the same way, and while it's in their hand the mod gets the mouse buttons. Make one with
-    /// <see cref="Inventory.AddTool"/>.
+    /// <see cref="Inventory.AddTool"/> or <see cref="Inventory.AddProp(string, Mesh, Material, float)"/>.
     /// </summary>
     /// <example>
     /// <code>

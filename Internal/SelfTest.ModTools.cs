@@ -140,6 +140,10 @@ namespace FruktSharedLibrary.Internal
                 Check("The toolbar is back how it was", Enumerable.Range(0, count).All(s => Toolbar.GetItem(s) == before[s]));
             });
             yield return Wait(1f);
+
+            var props = TestModProps();
+            while (props.MoveNext())
+                yield return props.Current;
         }
 
         private static string DescribeHeld(GameObject held)
