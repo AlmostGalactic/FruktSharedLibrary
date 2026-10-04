@@ -45,6 +45,7 @@
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2CppFRUKT.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2CppTripledoseLibs.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2CppZenject.dll" Private="false" />
+    <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2CppSirenix.Serialization.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2Cppmscorlib.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2CppSystem.dll" Private="false" />
     <Reference Include="$(MelonLoaderDir)\Il2CppAssemblies\Il2CppSystem.Core.dll" Private="false" />
