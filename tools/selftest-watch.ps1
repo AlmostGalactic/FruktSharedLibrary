@@ -6,6 +6,8 @@
 #   [SelfTest] WHEEL <name> <notches>       -> mouse wheel (negative = down)
 #   [SelfTest] KEY <name> <virtual-key>     -> key press
 #   [SelfTest] MOUSEDOWN|MOUSEUP <name>     -> press or release the left mouse button
+#   [SelfTest] RCLICK <name>                -> right click where the mouse is
+#   [SelfTest] KEYDOWN|KEYUP <name> <vk>    -> press or release a key (to hold one down)
 # Input is only sent while FRUKT is the foreground window. Exits when the test finishes or the game closes.
 param(
     [string]$GameDir = "D:\SteamLibrary\steamapps\common\FRUKT",
@@ -54,7 +56,7 @@ while (((Get-Date) - $start).TotalMinutes -lt 7) {
         $text = $reader.ReadToEnd()
         $reader.Close()
     } catch { continue }
-    foreach ($m in [regex]::Matches($text, '\[SelfTest\] (SCREENSHOT|CLICK|WHEEL|KEY|MOUSEDOWN|MOUSEUP) ([\w-]+)(?: (-?[\d.]+))?(?: (-?[\d.]+))?')) {
+    foreach ($m in [regex]::Matches($text, '\[SelfTest\] (SCREENSHOT|RCLICK|CLICK|WHEEL|KEYDOWN|KEYUP|KEY|MOUSEDOWN|MOUSEUP) ([\w-]+)(?: (-?[\d.]+))?(?: (-?[\d.]+))?')) {
         $kind = $m.Groups[1].Value
         $name = $m.Groups[2].Value
         $id = "$kind $name"
@@ -87,6 +89,16 @@ while (((Get-Date) - $start).TotalMinutes -lt 7) {
             Start-Sleep -Milliseconds 80
             [W32]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero) # left up
             "clicked $name at $x,$y"
+        } elseif ($kind -eq 'RCLICK') {
+            [W32]::mouse_event(0x0008, 0, 0, 0, [UIntPtr]::Zero) # right down
+            Start-Sleep -Milliseconds 80
+            [W32]::mouse_event(0x0010, 0, 0, 0, [UIntPtr]::Zero) # right up
+            "right clicked $name"
+        } elseif ($kind -eq 'KEYDOWN' -or $kind -eq 'KEYUP') {
+            $vk = [byte][int]$m.Groups[3].Value
+            $scan = [byte][W32]::MapVirtualKey($vk, 0)
+            [W32]::keybd_event($vk, $scan, $(if ($kind -eq 'KEYUP') { 2 } else { 0 }), [UIntPtr]::Zero)
+            "$($kind.ToLower()) $name"
         } elseif ($kind -eq 'MOUSEDOWN') {
             [W32]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
             "mouse down $name"
