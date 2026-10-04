@@ -562,6 +562,23 @@ namespace FruktSharedLibrary.Internal
                     break;
                 yield return eventsTest.Current;
             }
+            var inventoryTest = TestInventory();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = inventoryTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Inventory test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return inventoryTest.Current;
+            }
             Section("UI", () =>
             {
                 Notifications.Show("FruktSharedLibrary self-test notification", 8f);
