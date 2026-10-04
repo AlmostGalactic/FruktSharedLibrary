@@ -195,7 +195,7 @@ namespace FruktSharedLibrary.UI
 
                 _console = FruktUi.CreateMonoText("ConsoleLine", _screen, "", 26f, FruktTheme.Dim, 60f, 52f, 900f, 40f);
                 _trail = FruktUi.CreateMonoText("Trail", _screen, "", 26f, FruktTheme.Dim, 234f, 143f, 1200f, 40f);
-                _title = FruktUi.CreateDisplayText("Current", _screen, "MOD MENU", 64f, FruktTheme.Text, 234f, 180f, 1400f, 110f);
+                _title = FruktUi.CreateDisplayText("Current", _screen, "FSL MENU", 64f, FruktTheme.Text, 234f, 180f, 1400f, 110f);
 
                 _viewport = FruktUi.CreateRect("Viewport", _screen, 0f, ViewTop, 1920f, ViewBottom - ViewTop);
                 _viewport.gameObject.AddComponent<RectMask2D>();
@@ -397,7 +397,7 @@ namespace FruktSharedLibrary.UI
         {
             _console.text = $"fsl v{FruktSharedLibraryMod.Version} | mods: {_modCount}";
             _trail.text = Trail();
-            _title.text = (_page?.Title ?? "MOD MENU").ToUpperInvariant();
+            _title.text = (_page?.Title ?? "FSL MENU").ToUpperInvariant();
             _escAction.text = Stack.Count <= _floor ? "CLOSE" : "BACK";
 
             foreach (var row in Rows)
@@ -687,13 +687,13 @@ namespace FruktSharedLibrary.UI
             }
         }
 
-        /// <summary>Breadcrumb like the game's: "pause / mod menu / mods /".</summary>
+        /// <summary>Breadcrumb like the game's: "pause / fsl menu / mods /".</summary>
         private static string Trail()
         {
             if (Stack.Count == 0)
                 return _origin + " /";
             // Opened on just one page (the main menu's MODS line), it hangs straight off the origin.
-            var builder = new StringBuilder(_origin).Append(_floor > 0 ? " / " : " / mod menu / ");
+            var builder = new StringBuilder(_origin).Append(_floor > 0 ? " / " : " / fsl menu / ");
             for (int i = 0; i < Stack.Count - 1; i++)
                 builder.Append(Stack[i].Title.ToLowerInvariant()).Append(" / ");
             return builder.ToString().TrimEnd();

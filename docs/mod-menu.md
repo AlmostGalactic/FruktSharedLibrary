@@ -5,7 +5,7 @@ All of this is in `FruktSharedLibrary.UI`.
 ## What players see
 
 Players open the mod menu with F8 (they can change the key), or with the MODS line the library adds to the pause
-menu. If FruitLib is installed, that line says MOD MENU instead, since FruitLib already has a MODS line. The menu
+menu. If FruitLib is installed, that line says FSL MENU instead, since FruitLib already has a MODS line. The menu
 looks like the game's settings screens, and the first screen has three entries:
 
 - Mods: every installed mod that uses the library. Each one shows its name, version and author, plus whatever

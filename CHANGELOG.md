@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The menu is now called FSL Menu: in its title, in its breadcrumb, and on the pause menu line when FruitLib is
+  installed (it said "Mod menu", which didn't say whose menu it was next to FruitLib's).
+
 ## 0.2.0
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

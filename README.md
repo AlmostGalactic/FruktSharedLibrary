@@ -35,7 +35,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
    gives code descriptions in their editor), and MelonLoader ignores it if it ends up in `Mods`.
 
 Mods that use the library need it installed. To open the mod menu, press F8 in a map or pick MODS in the pause
-menu. MODS on the main menu lists the installed mods, where you can switch them on and off. If you also have FruitLib, that line is called MOD MENU instead, because FruitLib already has one called
+menu. MODS on the main menu lists the installed mods, where you can switch them on and off. If you also have FruitLib, that line is called FSL MENU instead, because FruitLib already has one called
 MODS.
 
 ## Using it in a mod

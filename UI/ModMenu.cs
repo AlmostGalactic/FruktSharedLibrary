@@ -128,11 +128,11 @@ namespace FruktSharedLibrary.UI
             if (!FruktConfig.PauseMenuButton)
                 return;
             var entry = PauseEntry = PauseMenu.AddButton("Mods", Open);
-            // FruitLib adds its own MODS line; use a different word so the two can be told apart.
+            // FruitLib adds its own MODS line, so with FruitLib installed this one says whose it is.
             GameEvents.SandboxReady += _ =>
             {
                 bool fruitLib = MelonLoader.MelonBase.RegisteredMelons.Any(m => m.Info.Name == "FruitLib");
-                entry.SetLabel(fruitLib ? "Mod menu" : "Mods");
+                entry.SetLabel(fruitLib ? "FSL Menu" : "Mods");
             };
         }
 
@@ -250,7 +250,7 @@ namespace FruktSharedLibrary.UI
             float x = window.x + Padding;
             float y = window.y + 8f;
             float innerWidth = Width - Padding * 2f;
-            GUI.Label(new Rect(x, y, innerWidth, 24f), "<b>MOD MENU</b>", GuiStyles.Title);
+            GUI.Label(new Rect(x, y, innerWidth, 24f), "<b>FSL MENU</b>", GuiStyles.Title);
             GUI.Label(new Rect(x + innerWidth - 150f, y, 150f, 24f), $"<size=12>{ToggleKey} / Esc to close</size>", GuiStyles.Label);
             y += 30f;
 

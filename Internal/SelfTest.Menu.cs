@@ -202,6 +202,10 @@ namespace FruktSharedLibrary.Internal
                     });
                     Check("PauseMenu added its line to the pause menu", PauseMenu.Attached && ModMenu.PauseEntry.Button != null,
                         ModMenu.PauseEntry.Button == null ? "no button" : ModMenu.PauseEntry.Label);
+                    bool fruitLib = MelonLoader.MelonBase.RegisteredMelons.Any(m => m.Info.Name == "FruitLib");
+                    string expected = fruitLib ? "FSL Menu" : "Mods";
+                    Check($"The pause menu line is called {expected} {(fruitLib ? "next to FruitLib's" : "without FruitLib")}",
+                        ModMenu.PauseEntry.Label == expected, ModMenu.PauseEntry.Label);
                     Shot("pause-with-button");
                     yield return Wait(1.5f);
                     if (ModMenu.PauseEntry.Button != null)
