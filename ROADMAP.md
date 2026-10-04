@@ -37,6 +37,10 @@ Release steps:
 Released with [Build Kit](https://github.com/AlmostGalactic/FruktBuildKit), a Garry's Mod style tool gun made with the
 library, as the showcase.
 
+## 0.2.1: released
+
+- [x] The menu is called FSL Menu, so it can be told apart from FruitLib's.
+
 ## 0.2.x: patch candidates
 
 Known rough edges, each enough for a patch:
