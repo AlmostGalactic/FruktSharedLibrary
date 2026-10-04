@@ -60,6 +60,7 @@ namespace FruktSharedLibrary.Internal
             _probe = UiProbe.Requested(flag);
             FruktLog.ForceDebug = true;
             FruktLog.Msg("[SelfTest] Enabled. The test map loads automatically from the main menu.");
+            AddTestTool();
             LogUiSounds();
             GameEvents.MainMenuEntered += OnMainMenu;
             GameEvents.SandboxReady += OnSandboxReady;
@@ -561,6 +562,23 @@ namespace FruktSharedLibrary.Internal
                 if (!more)
                     break;
                 yield return eventsTest.Current;
+            }
+            var toolTest = TestModTools();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = toolTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Mod tool test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return toolTest.Current;
             }
             var inventoryTest = TestInventory();
             while (true)

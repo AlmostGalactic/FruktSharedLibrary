@@ -220,6 +220,23 @@ namespace FruktSharedLibrary.Gameplay
             => Items.Where(i => string.Equals(i.Category, category, StringComparison.OrdinalIgnoreCase)
                                 || string.Equals(i.CategoryName, category, StringComparison.OrdinalIgnoreCase)).ToList();
 
+        /// <summary>
+        /// Adds your own item to the inventory. It shows up in the terminal under <paramref name="category"/>
+        /// ("Weapons", "Tools", "Props" or "Etc"), the player puts it on the toolbar like any other item, and while
+        /// they hold it you get the mouse buttons through the returned <see cref="ModTool"/>. Call it from
+        /// <c>OnInitializeMelon</c>; the tool is added to the game's inventory as soon as the game has set its own
+        /// up.
+        /// </summary>
+        public static ModTool AddTool(string name, string category = "Tools")
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("A tool needs a name.", nameof(name));
+            return Internal.ModItems.Add(new ModTool(name, string.IsNullOrWhiteSpace(category) ? "Tools" : category));
+        }
+
+        /// <summary>The tools mods have added with <see cref="AddTool"/>.</summary>
+        public static IReadOnlyList<ModTool> ModTools => Internal.ModItems.All;
+
         /// <summary>Whether the terminal (the inventory screen) is open.</summary>
         public static bool TerminalOpen
         {
@@ -293,9 +310,20 @@ namespace FruktSharedLibrary.Gameplay
                 return "";
             try
             {
-                var asset = category.TryCast<SerializedGodInventoryCategoryData>();
-                if (asset == null)
-                    return "";
+                return CategoryName(category.TryCast<SerializedGodInventoryCategoryData>());
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        internal static string CategoryName(SerializedGodInventoryCategoryData asset)
+        {
+            if (asset == null)
+                return "";
+            try
+            {
                 return !string.IsNullOrEmpty(asset.ObjectName) ? asset.ObjectName : asset.name ?? "";
             }
             catch

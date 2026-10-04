@@ -53,6 +53,7 @@ namespace FruktSharedLibrary
             GameFlow.Update();
             CreatureTracker.Update();
             Gameplay.Toolbar.Update();
+            ModItems.Update();
             ModMenu.Update();
             PauseMenu.Update();
             MainMenuButton.Update();
