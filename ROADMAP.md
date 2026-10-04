@@ -1,0 +1,57 @@
+# Roadmap
+
+## How versions work
+
+| Update | What it needs |
+|--------|---------------|
+| **0.0.1** (patch, like 0.2.1) | At least one bug fix, security fix or small feature. |
+| **0.1.0** (minor, like 0.3.0) | At least five big features that make modders' lives easier. |
+| **1.0.0** | Not decided yet. It's too far ahead to plan. |
+
+Whatever the size, a release only goes out when the in-game self-test passes in full (see
+[Building and testing](docs/building-and-testing.md)), and the changelog says what changed.
+
+## 0.2.0: in progress
+
+The big features so far. That's six, so it meets the bar of five:
+
+- [x] **Inventory and toolbar.** Read the terminal's items and categories, and read, fill, select and empty the
+  toolbar's slots, with events.
+- [x] **Your own tools.** `Inventory.AddTool`: an item in the terminal that gives you the mouse buttons while the
+  player holds it, with a model in the hand.
+- [x] **Your own props.** `Inventory.AddProp` from a mesh or a prefab, placed with a hologram like the game's
+  props.
+- [x] **Automatic icons.** Tools and props without an icon get a picture of their model.
+- [x] **Reloading while the game runs.** Rebuilt bundles and changed files are picked up without a restart, and
+  props and tool models follow.
+- [x] **A mod template.** `dotnet new fruktmod` makes a project that's ready to build into the game.
+
+Also in it: `Shaders.FixMaterial` handles the built-in Standard shader, which drew nothing.
+
+Left to do before releasing:
+
+- [ ] Set the version to 0.2.0 (`FruktSharedLibraryMod.Version`) and turn the changelog's Unreleased section into 0.2.0.
+- [ ] A full self-test run on the release build.
+- [ ] Upload the DLL and XML docs to the GitHub release.
+
+## 0.2.x: patch candidates
+
+Known rough edges, each enough for a patch:
+
+- A toolbar slot that already holds a tool or prop can keep its old icon after the icon changes.
+- Loading a `Sprite` from a bundle (for tool icons) isn't covered by the self-test yet.
+- Bundles that depend on other bundles aren't covered by the self-test yet.
+- Each bundle reload keeps the old version's assets in memory.
+- Prop holograms use the library's own see-through material, not the game's hologram look.
+
+## 0.3.0: ideas
+
+Candidates for the next five. Nothing here is promised:
+
+- **A Unity mod kit.** A ready-made Unity project or package with a "build and copy to FRUKT" button, and a
+  checker that warns about custom scripts, unsupported shaders and props without colliders before you build.
+- **One-line items from a bundle.** Props and tools that take their prefab and icon from a bundle by name.
+- **Self-tests for mods.** The library's in-game test tools (checks, screenshots, real clicks) opened up so mods
+  can test themselves.
+- **Custom guns.** Weapons built on the game's own bullets and recoil.
+- **Props that stay.** Placed props that survive a map reset or a reload.

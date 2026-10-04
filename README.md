@@ -61,6 +61,10 @@ public class MyMod : MelonMod
 finished mod to read, see [FSL Party](https://github.com/AlmostGalactic/FslParty), a small demo that uses most of
 the library.
 
+## Roadmap
+
+What's coming, and the rules for what goes into each version, are in [ROADMAP.md](ROADMAP.md).
+
 ## Documentation
 
 Everything is documented in [`docs/`](docs/README.md):
