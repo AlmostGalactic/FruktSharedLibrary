@@ -29,6 +29,7 @@ namespace FruktSharedLibrary.Internal
             var mode = TestMode.Normal;
             var bind = new KeyBind(Key.G);
             int clicks = 0;
+            string typed = "old";
 
             var page = ModMenu.AddPage("Self-test menu")
                 .Header("Controls")
@@ -39,6 +40,7 @@ namespace FruktSharedLibrary.Internal
                 .Choice("Test choice", new[] { "flat", "shift", "free" }, () => choice, v => choice = v)
                 .Choice("Enum choice", () => mode, v => mode = v)
                 .KeyBinding("Test key", () => bind, v => bind = v)
+                .TextField("Test text", () => typed, v => typed = v, 12)
                 .Separator()
                 .Button("Test button", () => clicks++);
             var subPage = page.AddSubPage("Test sub-page").Label("Inside a sub-page.");
@@ -49,6 +51,7 @@ namespace FruktSharedLibrary.Internal
             var sliderItem = Find("Test slider");
             var choiceItem = Find("Test choice");
             var keyItem = Find("Test key");
+            var textItem = Find("Test text");
             var buttonItem = Find("Test button");
             var subLink = Find("Test sub-page");
 
@@ -101,6 +104,40 @@ namespace FruktSharedLibrary.Internal
                 yield return Wait(1f);
                 Check("Pressing a key rebinds it", bind != null && bind.Key == Key.K && !NativeModMenu.CapturingKey, bind?.ToString() ?? "null");
                 Check("The menu stayed open after rebinding", ModMenu.IsOpen);
+
+                // A text box: click, type with real keys (Shift for a capital), Backspace, Enter.
+                NativeModMenu.ScrollTo(textItem);
+                yield return Wait(0.3f);
+                Click("textbox", NativeModMenu.HitFor(textItem));
+                // The watcher can take a couple of seconds to act on a marker, so wait for the result.
+                for (float end = Now() + 4f; !NativeModMenu.Typing && Now() < end;) yield return null;
+                Check("Clicking a text box starts typing", NativeModMenu.Typing);
+                FruktLog.Msg("[SelfTest] KEYDOWN text-shift 16");
+                yield return Wait(0.2f);
+                PressKey("text-H", 0x48);
+                yield return Wait(0.2f);
+                FruktLog.Msg("[SelfTest] KEYUP text-shift 16");
+                yield return Wait(0.2f);
+                foreach (var (name, code) in new[] { ("i", 0x49), ("x", 0x58), ("backspace", 0x08), ("space", 0x20), ("2", 0x32) })
+                {
+                    PressKey("text-" + name, code);
+                    yield return Wait(0.3f);
+                }
+                for (float end = Now() + 4f; !NativeModMenu.Draft.EndsWith("2") && Now() < end;) yield return null;
+                Check("Typing doesn't change the value before Enter", typed == "old", typed);
+                Shot("menu-typing");
+                yield return Wait(1.5f);
+                PressKey("text-enter", 0x0D);
+                for (float end = Now() + 4f; NativeModMenu.Typing && Now() < end;) yield return null;
+                Check("Enter keeps what was typed", typed == "oldHi 2" && !NativeModMenu.Typing, typed);
+                Click("textbox-again", NativeModMenu.HitFor(textItem));
+                for (float end = Now() + 4f; !NativeModMenu.Typing && Now() < end;) yield return null;
+                PressKey("text-z", 0x5A);
+                for (float end = Now() + 4f; !NativeModMenu.Draft.EndsWith("z") && Now() < end;) yield return null;
+                PressKey("text-escape", 0x1B);
+                for (float end = Now() + 4f; NativeModMenu.Typing && Now() < end;) yield return null;
+                yield return Wait(0.3f);
+                Check("Esc stops typing and throws it away", typed == "oldHi 2" && !NativeModMenu.Typing && ModMenu.IsOpen, typed);
 
                 Click("button", NativeModMenu.HitFor(buttonItem));
                 yield return Wait(1f);
@@ -296,14 +333,14 @@ namespace FruktSharedLibrary.Internal
             var ratio = category.CreateEntry("Ratio", 0.5f, "Ratio", null, false, false, new MelonLoader.Preferences.ValueRange<float>(0f, 1f));
             var mode = category.CreateEntry("Mode", TestMode.Normal, "Mode");
             var key = category.CreateEntry("ToggleKey", "Ctrl+K", "Toggle key");
-            category.CreateEntry("Name", "hello", "Name");
+            var name = category.CreateEntry("Name", "hello", "Name");
             category.CreateEntry("Secret", 1, "Secret", null, true);
             try
             {
                 var page = ModMenu.AddPreferencesPage(category);
                 var kinds = string.Join(",", page.Items.ConvertAll(i => i.Kind.ToString()));
                 Check("AddPreferencesPage picks a row per entry type",
-                    kinds == "Toggle,Slider,Slider,Choice,KeyBinding,Label,Separator,Button", kinds);
+                    kinds == "Toggle,Slider,Slider,Choice,KeyBinding,TextField,Separator,Button", kinds);
                 Check("Hidden entries are left out", page.Items.TrueForAll(i => i.SafeText != "Secret"));
                 Check("Descriptions become hints", page.Items[0].Tooltip == "Bool entry.");
 
@@ -316,6 +353,9 @@ namespace FruktSharedLibrary.Internal
                     $"flag={flag.Value} count={count.Value} ratio={ratio.Value} mode={mode.Value}");
                 Check("Key rows store the key as text", KeyBind.TryParse(key.Value, out var bind) && bind.Key == Key.J && bind.Shift, key.Value);
                 Check("Preference rows read the entries", page.Items[1].GetFloat() == 7f && page.Items[3].GetInt() == 2);
+                Check("Text rows read the entry", page.Items[5].GetText() == "hello");
+                page.Items[5].SetText("world");
+                Check("Text rows write the entry", name.Value == "world", name.Value);
 
                 page.Items[page.Items.Count - 1].OnClick();
                 Check("Reset to defaults", !flag.Value && count.Value == 3 && mode.Value == TestMode.Normal);

@@ -97,6 +97,61 @@ namespace FruktSharedLibrary.Controls
             return false;
         }
 
+        /// <summary>
+        /// The characters typed this frame, for text boxes: letters, digits, space and common punctuation, with
+        /// Shift (US keyboard layout). Keys that don't type anything, like Backspace or Enter, aren't included.
+        /// </summary>
+        public static string GetTypedText()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return string.Empty;
+            bool shift = ShiftHeld;
+            var typed = new System.Text.StringBuilder();
+            foreach (var (key, plain, shifted) in TypingKeys)
+            {
+                try
+                {
+                    var control = keyboard[key];
+                    if (control != null && control.wasPressedThisFrame)
+                        typed.Append(shift ? shifted : plain);
+                }
+                catch
+                {
+                    // Keys this keyboard layout doesn't have.
+                }
+            }
+            return typed.ToString();
+        }
+
+        private static readonly (Key Key, char Plain, char Shifted)[] TypingKeys = BuildTypingKeys();
+
+        private static (Key, char, char)[] BuildTypingKeys()
+        {
+            var keys = new List<(Key, char, char)>();
+            for (var key = Key.A; key <= Key.Z; key++)
+            {
+                char letter = (char)('a' + (key - Key.A));
+                keys.Add((key, letter, char.ToUpperInvariant(letter)));
+            }
+            const string digits = "1234567890", shiftedDigits = "!@#$%^&*()";
+            for (int i = 0; i < 10; i++)
+                keys.Add((Key.Digit1 + i, digits[i], shiftedDigits[i]));
+            for (int i = 0; i < 10; i++)
+                keys.Add((Key.Numpad0 + i, (char)('0' + i), (char)('0' + i)));
+            keys.Add((Key.Space, ' ', ' '));
+            keys.Add((Key.Minus, '-', '_'));
+            keys.Add((Key.Equals, '=', '+'));
+            keys.Add((Key.Period, '.', '>'));
+            keys.Add((Key.Comma, ',', '<'));
+            keys.Add((Key.Slash, '/', '?'));
+            keys.Add((Key.Semicolon, ';', ':'));
+            keys.Add((Key.Quote, '\'', '"'));
+            keys.Add((Key.LeftBracket, '[', '{'));
+            keys.Add((Key.RightBracket, ']', '}'));
+            return keys.ToArray();
+        }
+
         /// <summary>True for Ctrl, Shift, Alt and the Windows/Command keys.</summary>
         public static bool IsModifier(Key key)
             => key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt

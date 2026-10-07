@@ -414,6 +414,16 @@ namespace FruktSharedLibrary.UI
                         _capturing = item;
                     break;
                 }
+
+                case ModMenuItemKind.TextField:
+                {
+                    GUI.Label(new Rect(rect.x, rect.y, rect.width * 0.4f, rect.height), item.SafeText, GuiStyles.Label);
+                    string text = item.GetText() ?? string.Empty;
+                    string next = GUI.TextField(new Rect(rect.x + rect.width * 0.4f, rect.y, rect.width * 0.6f, rect.height), text, item.MaxLength);
+                    if (next != text)
+                        Invoke(item, () => item.SetText(next));
+                    break;
+                }
             }
         }
 

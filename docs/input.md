@@ -14,6 +14,7 @@ FRUKT uses Unity's newer Input System, and the old `UnityEngine.Input` class may
 | `MousePosition` | In screen pixels, counted from the bottom left. |
 | `ScrollDelta` | How far the mouse wheel moved this frame. |
 | `TryGetPressedKey(out key, includeModifiers = false)` | The first key pressed this frame, for "press a key" prompts. Modifier keys are ignored unless you ask for them, so Ctrl+K gives you K. |
+| `GetTypedText()` | The characters typed this frame, for your own text boxes: letters, digits, space and common punctuation, with Shift, on a US keyboard layout. |
 | `IsModifier(key)` | Whether the key is Ctrl, Shift, Alt or the Windows/Command key. |
 | `TryParseKey(text, out key)` | Reads a key name like `F8`, `Insert`, `Digit1` or `Numpad0`. It also understands `1`, `Ctrl`, `Shift`, `Alt`, `Esc`, `Del`, `Ins`, `PgUp`, `PgDn`, `Return` and `` ` ``. |
 

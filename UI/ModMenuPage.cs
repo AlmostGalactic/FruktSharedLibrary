@@ -131,6 +131,18 @@ namespace FruktSharedLibrary.UI
             });
 
         /// <summary>
+        /// A line of text the player can type in: click it, type, then press Enter to keep it (Esc cancels).
+        /// <paramref name="set"/> is called once, with the finished text.
+        /// </summary>
+        public ModMenuPage TextField(string text, Func<string> get, Action<string> set, int maxLength = 32)
+            => Add(new ModMenuItem(ModMenuItemKind.TextField, () => text)
+            {
+                GetText = get ?? throw new ArgumentNullException(nameof(get)),
+                SetText = set ?? throw new ArgumentNullException(nameof(set)),
+                MaxLength = Math.Max(1, maxLength),
+            });
+
+        /// <summary>
         /// Adds a line that opens a new sub-page, and returns that sub-page so you can fill it. Keep a reference to
         /// the page you were building if you want to add more items to it afterwards.
         /// </summary>
@@ -210,6 +222,7 @@ namespace FruktSharedLibrary.UI
         KeyBinding,
         Separator,
         Link,
+        TextField,
     }
 
     internal sealed class ModMenuItem
@@ -227,6 +240,9 @@ namespace FruktSharedLibrary.UI
         public Action<int> SetInt;
         public Func<KeyBind> GetKey;
         public Action<KeyBind> SetKey;
+        public Func<string> GetText;
+        public Action<string> SetText;
+        public int MaxLength;
         public IReadOnlyList<string> Options;
         public ModMenuPage Target;
         public float Min;

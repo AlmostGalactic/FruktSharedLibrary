@@ -78,6 +78,8 @@ namespace FruktSharedLibrary.UI
         private static float _openedAt;
         private static Row _dragging;
         private static Row _capturing;
+        private static Row _editing;
+        private static string _draft = string.Empty;
         private static bool _failed;
 
         internal static bool IsOpen { get; private set; }
@@ -99,6 +101,7 @@ namespace FruktSharedLibrary.UI
             _scroll = 0f;
             _layoutSignature = null;
             _capturing = null;
+            _editing = null;
             _dragging = null;
             IsOpen = true;
             _openedAt = Time.unscaledTime;
@@ -115,6 +118,7 @@ namespace FruktSharedLibrary.UI
                 return;
             IsOpen = false;
             _capturing = null;
+            _editing = null;
             _dragging = null;
             if (_canvas != null)
                 _canvas.gameObject.SetActive(false);
@@ -128,9 +132,10 @@ namespace FruktSharedLibrary.UI
         /// <summary>Esc behaviour: cancel key capture, leave a page, or close.</summary>
         internal static void Back()
         {
-            if (_capturing != null)
+            if (_capturing != null || _editing != null)
             {
                 _capturing = null;
+                _editing = null;
                 return;
             }
             if (Stack.Count > _floor)
@@ -230,6 +235,7 @@ namespace FruktSharedLibrary.UI
             _layoutSignature = signature;
             _dragging = null;
             _capturing = null;
+            _editing = null;
 
             foreach (var row in Rows)
                 FruktUi.Destroy(row.Rect.gameObject);
@@ -343,6 +349,16 @@ namespace FruktSharedLibrary.UI
                     row.KeyChip = FruktUi.CreateRect("KeyChip", row.Rect, ControlX - Left, 14f, 160f, 44f);
                     row.KeyFrame = FruktUi.CreateFrame("Frame", row.KeyChip, FruktTheme.Text, 0f, 0f, 160f, 44f);
                     row.Value = FruktUi.CreateText("Key", row.KeyChip, "", FruktTheme.DisplayFont, 26f, FruktTheme.Text, 0f, 0f, 160f, 44f, TextAlignmentOptions.Center);
+                    row.Hit = row.KeyChip;
+                    return WithTooltip(row);
+                }
+                case ModMenuItemKind.TextField:
+                {
+                    var row = BuildSettingRow(item, y);
+                    row.KeyChip = FruktUi.CreateRect("TextBox", row.Rect, ControlX - Left, 14f, SliderWidth, 44f);
+                    row.KeyFrame = FruktUi.CreateFrame("Frame", row.KeyChip, FruktTheme.Text, 0f, 0f, SliderWidth, 44f);
+                    row.Value = FruktUi.CreateText("Text", row.KeyChip, "", FruktTheme.MonoFont, ValueSize, FruktTheme.Text, 14f, 0f, SliderWidth - 28f, 44f, TextAlignmentOptions.Left);
+                    row.Value.overflowMode = TextOverflowModes.Ellipsis;
                     row.Hit = row.KeyChip;
                     return WithTooltip(row);
                 }
@@ -468,6 +484,16 @@ namespace FruktSharedLibrary.UI
                         row.Value.rectTransform.sizeDelta = new Vector2(width, 44f);
                         break;
                     }
+                    case ModMenuItemKind.TextField:
+                    {
+                        SetText(row, FruktUi.SettingLabel(item.SafeText));
+                        bool editing = _editing == row;
+                        string text = editing ? _draft + (Time.unscaledTime % 1f < 0.5f ? "_" : " ") : Safe(item.GetText) ?? string.Empty;
+                        row.Value.text = !editing && text.Length == 0 ? "click to type" : text;
+                        row.Value.color = editing ? FruktTheme.Accent : text.Length == 0 ? FruktTheme.Dim : FruktTheme.Text;
+                        row.KeyFrame.color = editing ? FruktTheme.Accent : row.Hovered ? Color.white : FruktTheme.Text;
+                        break;
+                    }
                 }
             }
 
@@ -512,6 +538,11 @@ namespace FruktSharedLibrary.UI
             }
             if (!pressed)
                 return;
+
+            // A click anywhere keeps what was typed, like pressing Enter.
+            var wasEditing = _editing;
+            if (wasEditing != null)
+                FinishEditing(true);
 
             foreach (var row in Rows)
             {
@@ -564,6 +595,15 @@ namespace FruktSharedLibrary.UI
                         _capturing = row;
                         Sounds.Play(UISFXType.SmallButtonClick, 0.8f);
                         return;
+                    case ModMenuItemKind.TextField:
+                        if (wasEditing == row)
+                            return;
+                        _editing = row;
+                        _draft = Safe(item.GetText) ?? string.Empty;
+                        if (_draft.Length > item.MaxLength)
+                            _draft = _draft.Substring(0, item.MaxLength);
+                        Sounds.Play(UISFXType.SmallButtonClick, 0.8f);
+                        return;
                 }
             }
         }
@@ -582,8 +622,50 @@ namespace FruktSharedLibrary.UI
                 Invoke(item, () => item.SetFloat(item.ClampedValue(value)));
         }
 
+        private static void HandleTyping()
+        {
+            if (_editing == null)
+                return;
+            if (FruktInput.GetKeyDown(Key.Escape))
+            {
+                _editing = null;
+                return;
+            }
+            if (FruktInput.GetKeyDown(Key.Enter) || FruktInput.GetKeyDown(Key.NumpadEnter))
+            {
+                FinishEditing(true);
+                return;
+            }
+            if (FruktInput.GetKeyDown(Key.Backspace) && _draft.Length > 0)
+                _draft = FruktInput.CtrlHeld ? string.Empty : _draft.Substring(0, _draft.Length - 1);
+            string typed = FruktInput.GetTypedText();
+            if (typed.Length > 0)
+            {
+                _draft += typed;
+                int max = _editing.Item.MaxLength;
+                if (_draft.Length > max)
+                    _draft = _draft.Substring(0, max);
+            }
+        }
+
+        private static void FinishEditing(bool keep)
+        {
+            var row = _editing;
+            _editing = null;
+            if (!keep || row == null)
+                return;
+            string text = _draft;
+            Invoke(row.Item, () => row.Item.SetText(text));
+            Sounds.Play(UISFXType.SwitchOn, 0.8f);
+        }
+
         private static void HandleKeyCapture()
         {
+            if (_editing != null)
+            {
+                HandleTyping();
+                return;
+            }
             if (_capturing == null || !FruktInput.TryGetPressedKey(out var key))
                 return;
             var item = _capturing.Item;
@@ -612,8 +694,14 @@ namespace FruktSharedLibrary.UI
                 _content.anchoredPosition = new Vector2(0f, _scroll);
         }
 
-        /// <summary>True while a key-binding row waits for a key press.</summary>
-        internal static bool CapturingKey => _capturing != null;
+        /// <summary>True while a key-binding row waits for a key press or a text box is being typed in.</summary>
+        internal static bool CapturingKey => _capturing != null || _editing != null;
+
+        /// <summary>True while a text box is being typed in (self-test access).</summary>
+        internal static bool Typing => _editing != null;
+
+        /// <summary>What's been typed so far (self-test access).</summary>
+        internal static string Draft => _editing != null ? _draft : string.Empty;
 
         // ------------------------------------------------------------ self-test access
 

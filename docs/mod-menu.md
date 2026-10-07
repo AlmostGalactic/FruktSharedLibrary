@@ -81,6 +81,7 @@ Every row method returns the page, so you can chain them.
 | `Choice(text, options, get, set)` | Pick one of a few words, laid out like the game's "flat / shift / free". `get` and `set` use the index. |
 | `Choice<TEnum>(text, get, set)` | The same, for an enum. |
 | `KeyBinding(text, get, set)` | A key you can rebind: click it and press a key. Esc cancels, Backspace clears it. Uses [`KeyBind`](input.md#keybind). |
+| `TextField(text, get, set, maxLength = 32)` | A box the player types in. Click it, type, and press Enter (or click anywhere else) to keep it; Esc throws it away. `set` is called once, with the finished text. Backspace deletes a letter and Ctrl+Backspace clears it. |
 | `Separator()` | A thin line. |
 | `AddSubPage(title)` | A line that opens another page. Note that this returns the new page, not the one you called it on. |
 
@@ -114,6 +115,7 @@ title = null)` turns it into a page so players can change them in game:
 | `int`, `float` or `double` without a range | Read-only text |
 | An enum | Choice |
 | A `string` with "key" in its identifier or name that parses as a `KeyBind` | Key binding |
+| Any other `string` | Text box |
 | Anything else | Read-only text |
 
 Hidden entries are skipped, and each entry's description is shown as its hint. There's a "Reset to defaults"

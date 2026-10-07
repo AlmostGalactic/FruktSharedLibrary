@@ -20,6 +20,7 @@ namespace FruktSharedLibrary.UI
         /// <item><c>int</c>/<c>float</c>/<c>double</c> with a <see cref="ValueRange{T}"/> validator → slider (without one → read-only line)</item>
         /// <item>enums → choice</item>
         /// <item><c>string</c> whose identifier or name contains "key" and that parses as a <see cref="KeyBind"/> → key binding</item>
+        /// <item>any other <c>string</c> → text box</item>
         /// <item>anything else → read-only line showing the value</item>
         /// </list>
         /// The entry's description becomes the hint line. Changes are applied immediately and saved to
@@ -98,6 +99,11 @@ namespace FruktSharedLibrary.UI
                 page.KeyBinding(name,
                     () => KeyBind.TryParse((string)entry.BoxedValue, out var bind) ? bind : null,
                     bind => Set(bind?.ToString() ?? string.Empty));
+                return;
+            }
+            if (type == typeof(string))
+            {
+                page.TextField(name, () => (string)entry.BoxedValue ?? string.Empty, v => Set(v), 64);
                 return;
             }
             page.Label(() => $"{name}: {entry.GetValueAsString()}  (edit in MelonPreferences.cfg)");
