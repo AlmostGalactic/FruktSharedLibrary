@@ -1,12 +1,18 @@
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Entities;
 using FruktSharedLibrary.Gameplay;
 using FruktSharedLibrary.Interop;
 using FruktSharedLibrary.Utilities;
 using Il2CppInfrastructure.Project.AssetsHandlers.SFX;
+using Il2CppServices.Infrastructure;
+using Il2CppServices.Spawnables;
 using Il2CppLVA.Creatures;
 using Il2CppLVA.Limbs;
+using Il2CppSpawnables.Bullets;
+using Il2CppSpawnables.Weapons;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
@@ -45,8 +51,9 @@ namespace FruktSharedLibrary.Combat
     }
 
     /// <summary>
-    /// Bullets for mod guns: a shot along a ray that wounds people the way the game's guns do, pushes what it hits
-    /// and plays the impact sound. Also spread, shots that go through things, and tracer lines.
+    /// Bullets for mod guns. <see cref="Launch"/> flies the game's own bullets, which wound people exactly like the
+    /// game's guns do. <see cref="Fire"/> and <see cref="Pierce"/> are instant hits along a ray that make a single
+    /// wound where they land. Also spread, the point under the crosshair, and tracer lines.
     /// </summary>
     public static class Bullets
     {
@@ -54,7 +61,7 @@ namespace FruktSharedLibrary.Combat
         public const float DefaultRange = 400f;
 
         /// <summary>
-        /// Fires a bullet along <paramref name="ray"/>. A person gets a wound <paramref name="radiusVoxels"/> across
+        /// An instant shot along <paramref name="ray"/>. A person gets one wound <paramref name="radiusVoxels"/> across
         /// (see <see cref="Damage.Apply(RaycastHit, int, float, Vector3?)"/>), and anything that moves gets an impulse
         /// of <paramref name="push"/> where it was hit.
         /// </summary>
@@ -132,6 +139,90 @@ namespace FruktSharedLibrary.Combat
                     Sounds.Play(ImpactSFXType.Bullet9MMHardSurface, hit.point, 0.5f);
             }
             return new BulletHit(hit.point, hit, limb);
+        }
+
+
+        // ------------------------------------------------------------ the game's own bullets
+
+        /// <summary>Which of the game's bullets <see cref="Launch"/> flies.</summary>
+        public enum Caliber
+        {
+            /// <summary>9mm, the Viper-17's round.</summary>
+            Pistol,
+            /// <summary>7.62, the Lynx-F's round.</summary>
+            Rifle,
+            /// <summary>One 12-gauge pellet, the Grist-03's round.</summary>
+            Pellet,
+        }
+
+        private static readonly Dictionary<Caliber, (ShotBus Bus, IShotBusService Service)> Buses = new();
+
+        /// <summary>
+        /// Flies one of the game's real bullets from <paramref name="origin"/> along <paramref name="direction"/>. It is
+        /// the same bullet the game's guns fire, so it goes into a body, makes the same wound channel, can come out the
+        /// other side, and shoves what it hits.
+        /// </summary>
+        public static Bullet Launch(Vector3 origin, Vector3 direction, Caliber caliber = Caliber.Pistol, float speed = 0f)
+        {
+            try
+            {
+                var bullets = GameServices.TryGet<INativeSpawnablesHandler>()?.Weapons?.Bullets;
+                var factory = GameServices.TryGet<IUniversalManagedBehaviourFactory>();
+                if (bullets == null || factory == null)
+                {
+                    FruktLog.Warning("Can't launch a bullet: the game's bullets aren't registered yet.");
+                    return null;
+                }
+                direction = direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
+                var rotation = new Il2CppSystem.Nullable<Quaternion>(Quaternion.LookRotation(direction));
+                Bullet bullet;
+                switch (caliber)
+                {
+                    case Caliber.Rifle:
+                        bullet = factory.CreateByPassport(bullets.Bullet762, origin, rotation).Cast<Bullet>();
+                        break;
+                    case Caliber.Pellet:
+                        bullet = factory.CreateByPassport(bullets.Bullet12gaPellet, origin, rotation).Cast<Bullet>();
+                        break;
+                    default:
+                        bullet = factory.CreateByPassport(bullets.Bullet9mm, origin, rotation).Cast<Bullet>();
+                        break;
+                }
+                var bus = BusFor(caliber);
+                int shot = bus.Open();
+                bus.CountRound(shot);
+                bullet.Launch(direction, bus.Cast<IBulletLauncher>(), shot);
+                var body = bullet.GetComponent<Rigidbody>();
+                if (body != null)
+                    body.velocity = direction * (speed > 0f ? speed : DefaultSpeed(caliber));
+                return bullet;
+            }
+            catch (Exception e)
+            {
+                FruktLog.Warning("Launching a bullet failed: " + e.Message);
+                return null;
+            }
+        }
+
+        private static float DefaultSpeed(Caliber caliber) => caliber switch
+        {
+            Caliber.Rifle => 400f,
+            Caliber.Pellet => 400f,
+            _ => 200f,
+        };
+
+        private static ShotBus BusFor(Caliber caliber)
+        {
+            var service = GameServices.TryGet<IShotBusService>();
+            if (!Buses.TryGetValue(caliber, out var entry) || entry.Bus == null || entry.Service != service)
+            {
+                var bus = new ShotBus();
+                // The game's service listens to a bus for where its rounds land, and plays the impact sounds.
+                service?.Hear(bus);
+                entry = (bus, service);
+                Buses[caliber] = entry;
+            }
+            return entry.Bus;
         }
 
         // ------------------------------------------------------------ tracers

@@ -132,17 +132,47 @@ on) return a `ModTool`, so set up the gun part first, or keep a reference like `
 
 ### Bullets
 
-`Bullets` (in `FruktSharedLibrary.Combat`) shoots along a ray. People get a wound like the game's guns make,
-anything that moves gets pushed, and the impact sound plays.
+`Bullets` (in `FruktSharedLibrary.Combat`) has two kinds of shot. `Launch` flies the game's own bullets, which
+are the ones to use when a gun should hurt like the game's guns. `Fire` and `Pierce` are instant hits along a ray
+that make one wound where they land, which suits tools and odd weapons.
+
+`Launch` makes a real 9mm, 7.62 or 12-gauge pellet. It goes into a body, makes the same channel through it, can
+come out the other side, wounds what's behind, shoves what it hits and plays the impact sound.
+
+```csharp
+.OnFire(gun =>
+{
+    var direction = (Bullets.AimPoint() - gun.Muzzle).normalized;
+    Bullets.Launch(gun.Muzzle, direction, Bullets.Caliber.Pistol);
+    Effects.MuzzleFlash(gun.Muzzle, direction);
+})
+```
 
 | Member | Description |
 |--------|-------------|
-| `Fire(ray, range = 400, radiusVoxels = 2, strength = 1, push = 5, sound = true)` | One bullet. Gives you a `BulletHit` with `Hit`, `End`, `Limb`, `Creature` and `Body`. |
+| `Launch(origin, direction, caliber = Pistol, speed = 0)` | One of the game's bullets. `Caliber` is `Pistol` (9mm), `Rifle` (7.62) or `Pellet` (12-gauge); the speed is the game's own for that round unless you give one. Returns the bullet. Fire a shotgun by launching several pellets with `Spread`. |
+| `Fire(ray, range = 400, radiusVoxels = 2, strength = 1, push = 5, sound = true)` | An instant hit that makes one wound. Gives you a `BulletHit` with `Hit`, `End`, `Limb`, `Creature` and `Body`. |
 | `Pierce(ray, maxHits = 8, ...)` | A bullet that goes through bodies and loose objects, up to `maxHits` of them. The ground and walls stop it. |
 | `EndOf(hits, ray)` | Where a pierced shot ended. |
 | `Spread(ray, degrees)`, `Spread(direction, degrees)` | Turns a shot a random amount, up to `degrees`. |
 | `AimPoint(range = 400)` | The point under the crosshair. Send projectiles from the muzzle towards it, so they land where the player aimed. |
 | `Tracer(from, to, color, width = 0.012, seconds = 0.08)` | A line that thins away, for showing where a shot went. |
+
+### Effects
+
+`Effects` (in `FruktSharedLibrary.Combat`) is fire, smoke, sparks and debris made of small cubes, like the rest of
+the game. There's nothing to set up, and it tidies itself up and clears when a map is left. At most
+`Effects.MaxParticles` cubes are alive at once.
+
+| Member | Description |
+|--------|-------------|
+| `Explosion(at, size = 3, shake = true)` | A white-hot core, a fireball, a column of smoke, sparks, debris that bounces off the ground, dust along the ground, a flash of light and a camera shake that fades with distance. `size` is about the radius in metres. It makes the picture only: use `Damage.Explosion` for the harm. |
+| `MuzzleFlash(at, direction, size = 1)` | The flash and smoke at a barrel, using the game's own muzzle effects. |
+| `Burst(at, color, count, speed, size, life, glow, gravity, direction, spreadDegrees, endColor, bounce)` | Cubes thrown out of a point, in every direction or in a cone. `glow` makes them light up like sparks; a negative `gravity` makes them rise. |
+| `Smoke(at, size, life, velocity, darkness)` | A puff that swells and thins away. |
+| `Flame(at, size, life, velocity)` | A piece of flame, white-yellow going to red. Emit one or two a frame behind a rocket. |
+| `Flash(at, color, range, seconds, intensity)` | A flash of light that dies away. |
+| `Count`, `Clear()` | How many cubes are alive, and take them all away. |
 
 ## Your own props
 

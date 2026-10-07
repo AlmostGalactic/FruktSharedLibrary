@@ -1,9 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 using FruktSharedLibrary.Combat;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Entities;
 using FruktSharedLibrary.Gameplay;
+using FruktSharedLibrary.Interop;
 using FruktSharedLibrary.UI;
 using Il2CppLVA.Creatures;
 using Il2CppLVA.NodesHierarchy.Benchmark.Variants;
@@ -152,6 +153,37 @@ namespace FruktSharedLibrary.Internal
                 Enumerable.Range(0, 200).All(_ => Vector3.Angle(forward, Bullets.Spread(forward, 5f)) <= 5.01f));
             Shot("bullets");
             yield return Wait(1.5f);
+
+            // The game's own bullets, and the effects that go with a gun.
+            Hang(first, 4f);
+            Hang(second, 6.5f);
+            hurtFirst = Hurt(first);
+            var start = LocalPlayer.CameraPosition + LocalPlayer.Forward * 1f;
+            var launched = Bullets.Launch(start, LocalPlayer.Forward, Bullets.Caliber.Pistol);
+            Check("Bullets.Launch makes one of the game's bullets", launched != null && launched.Exists());
+            var body = launched != null ? launched.GetComponent<Rigidbody>() : null;
+            Check("It flies fast", body != null && body.velocity.magnitude > 50f, body != null ? $"{body.velocity.magnitude:0} m/s" : "no body");
+            yield return Wait(0.6f);
+            Check("A launched bullet wounds them like the game's guns do", Hurt(first) > hurtFirst, $"{hurtFirst:0.000} -> {Hurt(first):0.000}");
+            Check("Every caliber launches", Bullets.Launch(start + Vector3.up, Vector3.up, Bullets.Caliber.Rifle) != null
+                && Bullets.Launch(start + Vector3.up, Vector3.up, Bullets.Caliber.Pellet) != null);
+            yield return Wait(0.5f);
+
+            int cubes = Effects.Count;
+            Effects.Explosion(LocalPlayer.GetPointInFront(8f), 2f, shake: false);
+            Check("Effects.Explosion makes plenty of cubes", Effects.Count > cubes + 100, $"{Effects.Count - cubes} cubes");
+            Effects.Burst(start, Color.cyan, 10);
+            Effects.Smoke(start);
+            Effects.Flame(start);
+            Effects.MuzzleFlash(start, LocalPlayer.Forward);
+            Effects.Flash(start, Color.white);
+            Shot("explosion");
+            yield return Wait(0.3f);
+            yield return Wait(4.5f);
+            Check("Effects tidy themselves up", Effects.Count == 0, $"{Effects.Count} left");
+            Effects.Explosion(LocalPlayer.GetPointInFront(8f), 2f, shake: false);
+            Effects.Clear();
+            Check("Effects.Clear takes everything away", Effects.Count == 0);
             Creatures.DeleteAll();
         }
 

@@ -15,7 +15,8 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Damage that works like the game's own weapons, and explosions
 - Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
 - The inventory and the toolbar: read and fill the slots, and add your own tools, guns and props to the terminal
-- Bullets for your own guns: shots that wound like the game's, go through things, spread, and leave tracers
+- Bullets for your own guns: the game's own bullets, instant shots that go through things, spread, and tracers
+- Effects for them: cube explosions, muzzle flashes, fire, smoke, sparks and debris
 - Joints (welds, hinges, ropes, springs and more), and events for when objects collide, get grabbed or get shot
 - Saving builds (objects and the joints between them) to files, and spawning copies of them in any map
 - Asset bundles from Unity: prefabs, textures, materials and sounds, with materials switched to the game's shaders

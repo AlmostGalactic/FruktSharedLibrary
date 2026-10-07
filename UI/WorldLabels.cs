@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Gameplay;
@@ -12,6 +12,7 @@ namespace FruktSharedLibrary.UI
     public sealed class WorldLabel
     {
         internal TextMeshProUGUI Label, Shadow;
+        internal RectTransform Root;
         internal readonly Transform Target;
         internal readonly Func<Vector3> Position;
         internal readonly bool FollowsTarget;
@@ -103,8 +104,8 @@ namespace FruktSharedLibrary.UI
             label.Exists = false;
             label.OnScreen = false;
             Labels.Remove(label);
-            if (label.Label != null)
-                FruktUi.Destroy(label.Label.transform.parent.gameObject);
+            if (label.Root != null)
+                FruktUi.Destroy(label.Root.gameObject);
         }
 
         /// <summary>Takes every label away, including other mods' labels.</summary>
@@ -170,19 +171,21 @@ namespace FruktSharedLibrary.UI
                 var screen = camera != null ? camera.WorldToScreenPoint(world) : Vector3.back;
                 bool show = label.Visible && GameState.InSandbox && screen.z > 0.05f && screen.z <= label.MaxDistance;
                 label.OnScreen = show;
-                if (label.Label == null)
+                if (label.Root == null)
                 {
                     if (!show)
                         continue;
                     Build(label);
                 }
-                var root = label.Label.transform.parent.gameObject;
+                // Kept from when it was built: asking a transform for its parent can come back as a plain Transform,
+                // which can't be cast to a RectTransform.
+                var root = label.Root.gameObject;
                 if (root.activeSelf != show)
                     root.SetActive(show);
                 if (!show)
                     continue;
 
-                ((RectTransform)root.transform).anchoredPosition = new Vector2(screen.x / scale, screen.y / scale);
+                label.Root.anchoredPosition = new Vector2(screen.x / scale, screen.y / scale);
                 string text = label.Text ?? string.Empty;
                 if (label.Label.text != text)
                 {
@@ -203,6 +206,7 @@ namespace FruktSharedLibrary.UI
             root.anchorMin = Vector2.zero;
             root.anchorMax = Vector2.zero;
             root.pivot = new Vector2(0.5f, 0.5f);
+            label.Root = root;
             label.Shadow = FruktUi.CreateText("Shadow", root, label.Text, FruktTheme.DisplayFont, label.Size, Color.black, 2f, 2f, 600f, 60f, TextAlignmentOptions.Center);
             label.Label = FruktUi.CreateText("Text", root, label.Text, FruktTheme.DisplayFont, label.Size, label.Color, 0f, 0f, 600f, 60f, TextAlignmentOptions.Center);
         }

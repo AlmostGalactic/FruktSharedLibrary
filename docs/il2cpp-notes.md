@@ -96,6 +96,20 @@ nothing with them, so the object is there and invisible. `Shaders.FixMaterial` a
 them to URP Lit and keep the colour and texture. Bundle assets, tool models and prefab props get this done for
 you.
 
+## A bullet's speed is set after `Launch`
+
+The game's bullets take their speed from their rigidbody, but `Bullet.Launch` only records the heading and the
+shooter: a bullet launched without a velocity just falls. Set `rigidbody.velocity` after calling `Launch`, and give
+it a `ShotBus` that the game's `IShotBusService` has heard (`Hear`), or the impact sounds never play.
+[`Bullets.Launch`](inventory.md#bullets) does both.
+
+## Asking a transform for its parent can give you a plain `Transform`
+
+`label.transform.parent` is a `Transform` in the interop, and a cast of it to `RectTransform` can fail with an
+`InvalidCastException` even though the object is a RectTransform, when something else has already wrapped the same
+object as a `Transform`. Keep the `RectTransform` you made, or use `TryCast<RectTransform>()` or
+`GetComponent<RectTransform>()`.
+
 ## Bullets are physical objects
 
 The game's bullets are real rigidbodies that fly and collide, not raycasts. So a shot hitting something arrives

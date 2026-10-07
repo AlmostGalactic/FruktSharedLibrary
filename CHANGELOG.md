@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Bullets.Launch` flies the game's own bullets (9mm, 7.62 or a 12-gauge pellet), so a mod gun wounds people
+  exactly like the game's guns do: through the body, out the other side, with blood and the same impact sound.
+  `Bullets.Fire` and `Pierce` are still there for instant single wounds, and their documentation now says so.
+- `Effects`: explosions, muzzle flashes, fire, smoke, sparks and debris made of cubes, with `Explosion`,
+  `MuzzleFlash`, `Burst`, `Smoke`, `Flame` and `Flash`.
+- Fixed: `WorldLabels` could stop working with an `InvalidCastException` after a label was shown for a while.
+
 ## 0.3.0
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

@@ -69,6 +69,12 @@ Release steps:
 - [x] A full self-test run on the release build.
 - [x] Upload the DLL and XML docs to the GitHub release.
 
+## 0.3.1: released
+
+- [x] `Bullets.Launch`, the game's own bullets for mod guns.
+- [x] `Effects`, cube explosions, muzzle flashes, fire, smoke and sparks.
+- [x] Fixed `WorldLabels` stopping after an invalid cast.
+
 ## Ideas for later
 
 Nothing here is promised:

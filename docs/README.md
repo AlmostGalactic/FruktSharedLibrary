@@ -8,7 +8,7 @@
 | [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the body simulation, `Damage` |
 | [Spawning](spawning.md) | `Spawner`, `FirearmType`, firearm extensions, spawning your own models |
 | [Joints, object events and builds](objects.md) | `Joints`, `JointHandle`, `ObjectEvents`, `Builds`, `Build` |
-| [Inventory, toolbar, tools and props](inventory.md) | `Inventory`, `InventoryItem`, `Toolbar`, `ModTool`, `ModGun`, `Bullets`, `ModProp` |
+| [Inventory, toolbar, tools and props](inventory.md) | `Inventory`, `InventoryItem`, `Toolbar`, `ModTool`, `ModGun`, `Bullets`, `Effects`, `ModProp` |
 | [Asset bundles](asset-bundles.md) | Making bundles in Unity, `ModBundle`, `Shaders` |
 | [Mod menu and pause menu](mod-menu.md) | `ModMenu`, `ModMenuPage`, settings pages, `PauseMenu`, switching mods off, version checks, the library's settings |
 | [Right-click menus](context-menus.md) | `ContextMenus`, `ContextMenuGroup`, `ContextMenuContext` |

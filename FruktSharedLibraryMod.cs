@@ -1,4 +1,4 @@
-using FruktSharedLibrary.Core;
+﻿using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Internal;
 using FruktSharedLibrary.UI;
 using MelonLoader;
@@ -13,7 +13,7 @@ namespace FruktSharedLibrary
     public sealed class FruktSharedLibraryMod : MelonMod
     {
         /// <summary>Library version. Mods can compare against it to require a minimum version.</summary>
-        public const string Version = "0.3.0";
+        public const string Version = "0.3.1";
 
         /// <summary>The running library instance.</summary>
         public static FruktSharedLibraryMod Instance { get; private set; }
@@ -34,6 +34,7 @@ namespace FruktSharedLibrary
             LibraryPatches.Apply(HarmonyInstance);
             PauseMenu.Initialize();
             GameEvents.SandboxExited += Objects.Joints.Clear;
+            GameEvents.SandboxExited += Combat.Effects.Clear;
             ModMenu.Initialize();
             BuiltInMenu.Register();
             Scheduler.Every(10f, ContextMenuCarrier.Cleanup);
@@ -59,6 +60,7 @@ namespace FruktSharedLibrary
             MainMenuButton.Update();
             Notifications.Update();
             Combat.Bullets.Update();
+            Combat.Effects.Update();
             GameEvents.RaiseUpdate();
         }
 
