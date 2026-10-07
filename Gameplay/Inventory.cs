@@ -235,6 +235,18 @@ namespace FruktSharedLibrary.Gameplay
         }
 
         /// <summary>
+        /// Adds your own gun to the inventory, under <paramref name="category"/> (Weapons unless you say otherwise).
+        /// It's a tool that fires on left click at the rate you set; handle <see cref="ModGun.Fired"/> to make each
+        /// shot do something. Call it from <c>OnInitializeMelon</c>, like <see cref="AddTool"/>.
+        /// </summary>
+        public static ModGun AddGun(string name, string category = "Weapons")
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("A gun needs a name.", nameof(name));
+            return (ModGun)Internal.ModItems.Add(new ModGun(name, string.IsNullOrWhiteSpace(category) ? "Weapons" : category));
+        }
+
+        /// <summary>
         /// Adds a prop made from a mesh (for example one from <see cref="Utilities.Meshes.LoadObj"/>) to the
         /// inventory, under Props. The player places it like the game's props; each copy is a physics object they
         /// can grab, throw and shoot. Call it from <c>OnInitializeMelon</c>, like <see cref="AddTool"/>.

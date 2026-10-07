@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Your own guns: `Inventory.AddGun` adds a gun under Weapons that fires on left click (or while held, if it's
+  automatic) at the rate you set, from a muzzle that follows its model in the hand.
+- `Bullets`: shots along a ray that wound people like the game's guns, push what they hit and play the impact
+  sound, shots that go through several things, spread, the point under the crosshair, and tracer lines.
+- Walking people about: `WalkTowards`, `SetFacing`, `FaceTowards` and `GetFacing` on creatures, and
+  `Creatures.GetNearest` with a filter.
+- `WorldLabels`: text over things in the world, like names over heads, in the game's display font.
+- Text boxes in the mod menu (`TextField`). String settings on a MelonPreferences page are now text boxes instead
+  of read-only lines.
+- `FruktInput.GetTypedText` gives you the characters typed this frame.
+- `limb.GetPosition()` and `limb.GetMovingTransform()`: where a body part really is. A limb's own `transform` stays
+  where the body was put together.
+- `ContextMenus.IsOpen` and `ContextMenus.Close()`.
+- Fixed: `Damage.Apply` on a limb without a direction pointed the wound from where the limb was when the body was
+  put together, not from where it is. The "Pop" example in the docs had the same mistake.
 - Builds: `Builds.Capture` saves objects and the joints between them, like a car, and `Builds.Spawn` puts copies in
   the world in any map. Builds go to JSON files with `Build.Save` and `Build.Load`. They hold mod props, the game's
   own props and guns, and anything a mod adds with `Builds.AddKind`, and mods can keep their own extras with each

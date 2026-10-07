@@ -99,6 +99,51 @@ old one.
 `Registered` turns true once it's in the inventory and `Item` is then its `InventoryItem`, so you can put it on
 the toolbar yourself. `Failed` means it couldn't be added; the log says why.
 
+## Your own guns
+
+`Inventory.AddGun(name)` adds a gun under Weapons. It's a tool that fires on left click, or for as long as the
+button is held if it's automatic, no faster than its fire rate. Each shot raises `Fired`; what the shot does is up
+to you, and [`Bullets`](#bullets) has the usual pieces.
+
+```csharp
+var smg = Inventory.AddGun("Wasp-9")
+    .WithFireRate(12f, automatic: true)
+    .WithMuzzle(new Vector3(0f, 0.05f, 0.34f))
+    .OnFire(gun =>
+    {
+        var shot = Bullets.Fire(Bullets.Spread(LocalPlayer.AimRay, 1.5f));
+        Bullets.Tracer(gun.Muzzle, shot.End, Color.yellow);
+        Sounds.Play(WeaponSFXType.Shoot9MM, gun.Muzzle);
+    });
+smg.WithDescription("Submachine gun.").WithModel(model);
+```
+
+The gun's own methods return the gun, and the ones it shares with every tool (`WithDescription`, `WithModel` and so
+on) return a `ModTool`, so set up the gun part first, or keep a reference like `smg` above.
+
+| Member | Description |
+|--------|-------------|
+| `WithFireRate(shotsPerSecond, automatic = false)`, `WithCooldown(seconds, automatic = false)` | How fast it fires, and whether holding the button keeps it firing. |
+| `WithMuzzle(offset)` | The end of the barrel, in the model's own coordinates. |
+| `OnFire(gun => ...)`, `Fired` | Runs each time it fires. |
+| `Muzzle` | The end of the barrel in the world, following the model in the hand. |
+| `TryFire()` | Fires now if it's ready, as if the player clicked. |
+| `Ready`, `FireInterval`, `Automatic`, `ShotsFired` | Its state. |
+
+### Bullets
+
+`Bullets` (in `FruktSharedLibrary.Combat`) shoots along a ray. People get a wound like the game's guns make,
+anything that moves gets pushed, and the impact sound plays.
+
+| Member | Description |
+|--------|-------------|
+| `Fire(ray, range = 400, radiusVoxels = 2, strength = 1, push = 5, sound = true)` | One bullet. Gives you a `BulletHit` with `Hit`, `End`, `Limb`, `Creature` and `Body`. |
+| `Pierce(ray, maxHits = 8, ...)` | A bullet that goes through bodies and loose objects, up to `maxHits` of them. The ground and walls stop it. |
+| `EndOf(hits, ray)` | Where a pierced shot ended. |
+| `Spread(ray, degrees)`, `Spread(direction, degrees)` | Turns a shot a random amount, up to `degrees`. |
+| `AimPoint(range = 400)` | The point under the crosshair. Send projectiles from the muzzle towards it, so they land where the player aimed. |
+| `Tracer(from, to, color, width = 0.012, seconds = 0.08)` | A line that thins away, for showing where a shot went. |
+
 ## Your own props
 
 `Inventory.AddProp` adds an item under Props that the player places in the world. While they hold it, a

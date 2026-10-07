@@ -15,6 +15,7 @@ The `Creatures` class:
 | `All`, `Count` | Every creature in the world, cut-off pieces included. |
 | `Humans`, `Living` | Just the humans, or just the ones still alive. |
 | `GetNearest(position, maxDistance = ∞, livingOnly = false)` | The creature closest to a point. |
+| `GetNearest(position, filter, maxDistance = ∞)` | The closest one `filter` accepts, like `c => c.IsHuman() && c != me`. |
 | `GetAimedCreature(maxDistance = 500)`, `GetAimedLimb(out hit, maxDistance = 500)` | Whatever is under the crosshair. |
 | `FromCollider`, `FromGameObject`, `LimbFromCollider`, `LimbFromGameObject` | Find the creature or limb a collider or object belongs to. |
 | `SpawnHuman(position, rotation, onSpawned)` | Spawns a human. Humans take a few frames to put together, so you get the creature in `onSpawned` once it's ready. |
@@ -41,7 +42,8 @@ With `using FruktSharedLibrary.Entities;` you get these on any `AbstractCreature
 | Blood | `GetBloodTank`, `GetBlood`, `GetBloodCapacity`, `SetBlood(amount)`, `RefillBlood`, `DrainBlood(amount)`, `StopBleeding` |
 | Actions | `Heal`, `Kill`, `Delete` |
 | Physics | `AddForce(force, mode)`, `AddExplosionForce(force, center, radius, upwards)`, `SetFrozen(bool)`, `TeleportTo(position)` |
-| Walking | `HasPuppeteer`, `GetPuppeteer`, `GetWalkInteraction`, `IsWalking`, `SetWalking(bool)` |
+| Walking | `HasPuppeteer`, `GetPuppeteer`, `GetWalkInteraction`, `IsWalking`, `SetWalking(bool)`, `WalkTowards(point)` |
+| Facing | `GetFacing`, `SetFacing(degrees)`, `FaceTowards(point)` |
 
 A few of these are worth knowing more about:
 
@@ -50,6 +52,14 @@ A few of these are worth knowing more about:
 - `AddForce` splits the force across the limbs by their mass.
 - `SetWalking(true)` only does anything while the creature still has its puppeteer (the part that animates the
   whole body) and is awake enough to walk.
+- `SetFacing` turns them on their feet to a compass direction (0 is +Z, 90 is +X), and while they walk they walk
+  that way. `WalkTowards(point)` does both; call it again as the point moves, and `SetWalking(false)` to stop.
+
+```csharp
+// Walk the nearest other person over to the player.
+var other = Creatures.GetNearest(LocalPlayer.Position, c => c.IsLiving() && c.IsHuman());
+other?.WalkTowards(LocalPlayer.Position);
+```
 
 Human body parts are `HumanoidNodeTagValue` values (in `Il2CppLVA.NodesHierarchy.Benchmark.Variants`): `Head`,
 `Spine`, `Pelvis`, `LeftArm`, `LeftForearm`, `LeftHand`, `LeftLeg`, `LeftKnee`, `LeftFoot`, and the same on the
@@ -65,11 +75,16 @@ head?.Detach();
 | | Members |
 |-------|---------|
 | Structure | `GetCreature`, `GetHumanPart`, `GetParentLimb`, `GetChildLimbs`, `GetNode` |
+| Position | `GetPosition`, `GetMovingTransform` |
 | Physics | `GetRigidbody`, `AddForce`, `AddForceAtPosition` |
 | Tissue | `GetVoxelMesh`, `GetWholeness`, `Damage(worldPoint, radiusVoxels = 3, strength = 1, direction)` |
 | Organs | `GetAllOrgans`, `GetOrgan<T>()`, for example `head.GetOrgan<Brain>()` |
 | Blood | `GetBloodSystem`, `GetBleedingWoundCount`, `StopBleeding`, `AddBleeding(extraForce)` |
 | Actions | `Detach`, `Delete` |
+
+A limb's own `transform` stays where the body was put together and doesn't follow it as it moves. Use
+`GetPosition()` for where a limb really is, and `GetMovingTransform()` for something to follow it with (a label, an
+effect).
 
 `Detach` uses the game's own detach action, so the piece that comes off becomes its own creature, just like when
 it happens in normal play.

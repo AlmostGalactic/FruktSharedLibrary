@@ -62,6 +62,7 @@ namespace FruktSharedLibrary.Internal
             FruktLog.Msg("[SelfTest] Enabled. The test map loads automatically from the main menu.");
             AddTestTool();
             AddTestProp();
+            AddTestGun();
             LogUiSounds();
             GameEvents.MainMenuEntered += OnMainMenu;
             GameEvents.SandboxReady += OnSandboxReady;
@@ -597,6 +598,23 @@ namespace FruktSharedLibrary.Internal
                 if (!more)
                     break;
                 yield return buildsTest.Current;
+            }
+            var gunsTest = TestGunsAndPeople();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = gunsTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Guns and people test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return gunsTest.Current;
             }
             var inventoryTest = TestInventory();
             while (true)

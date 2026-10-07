@@ -11,10 +11,11 @@ one place instead of in every mod. An in-game self-test checks all of it against
 
 - The game's services and events: map loaded, creature died, limb came off, gun fired, and so on
 - World and player control: time scale, gravity, pause, maps, the camera and aiming
-- Creatures: spawn, find, heal, kill and push them around, detach limbs, read blood and pain
+- Creatures: spawn, find, heal, kill and push them around, walk them somewhere, detach limbs, read blood and pain
 - Damage that works like the game's own weapons, and explosions
 - Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
-- The inventory and the toolbar: read and fill the slots, and add your own tools and props to the terminal
+- The inventory and the toolbar: read and fill the slots, and add your own tools, guns and props to the terminal
+- Bullets for your own guns: shots that wound like the game's, go through things, spread, and leave tracers
 - Joints (welds, hinges, ropes, springs and more), and events for when objects collide, get grabbed or get shot
 - Saving builds (objects and the joints between them) to files, and spawning copies of them in any map
 - Asset bundles from Unity: prefabs, textures, materials and sounds, with materials switched to the game's shaders
@@ -23,7 +24,8 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Mods built for a newer version of the library are kept from starting, with a message saying which version
   they need, instead of crashing halfway
 - Your own lines in right-click menus, including drop-down groups
-- Notifications, pause-menu buttons and UI helpers that use the game's fonts and colours
+- Notifications, pause-menu buttons, labels over things in the world, and UI helpers that use the game's fonts and
+  colours
 - Helpers for the IL2CPP problems that trip people up
 - A `dotnet new` template for new mods, and reloading of bundles and models while the game runs
 

@@ -50,15 +50,32 @@ Known rough edges, each enough for a patch:
 
 ## 0.3.0: in progress
 
-Big features so far (it needs five):
+The big features. That's five, so it meets the bar:
 
 - [x] **Saving builds.** Objects and the joints between them, saved to files and spawned again in any map.
+- [x] **Your own guns.** `Inventory.AddGun` with a fire rate, automatic fire and a muzzle, and `Bullets` for
+  shots that wound, pierce, spread and leave tracers.
+- [x] **Walking people about.** Send a person walking towards a point, turn them to face something, and find the
+  nearest creature that matches a filter.
+- [x] **Labels in the world.** `WorldLabels` puts text over things, like names over heads, in the game's font.
+- [x] **Text boxes in the mod menu.** `TextField` rows, and string settings that players can edit in game.
 
-Ideas for the rest. Nothing here is promised:
+Also in it: `limb.GetPosition()`, `ContextMenus.IsOpen` and `Close()`, `FruktInput.GetTypedText`, and a fix for
+wounds made without a direction.
+
+Release steps:
+
+- [ ] Set the version to 0.3.0 (`FruktSharedLibraryMod.Version`) and turn the changelog's Unreleased section into 0.3.0.
+- [ ] A full self-test run on the release build.
+- [ ] Upload the DLL and XML docs to the GitHub release.
+
+## Ideas for later
+
+Nothing here is promised:
 
 - **A Unity mod kit.** A ready-made Unity project or package with a "build and copy to FRUKT" button, and a
   checker that warns about custom scripts, unsupported shaders and props without colliders before you build.
 - **One-line items from a bundle.** Props and tools that take their prefab and icon from a bundle by name.
 - **Self-tests for mods.** The library's in-game test tools (checks, screenshots, real clicks) opened up so mods
   can test themselves.
-- **Custom guns.** Weapons built on the game's own bullets and recoil.
+- **The game's own bullets for mod guns.** Firing the game's bullet prefabs and recoil, rather than raycasts.

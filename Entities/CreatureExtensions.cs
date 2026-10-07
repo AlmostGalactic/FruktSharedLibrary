@@ -99,6 +99,53 @@ namespace FruktSharedLibrary.Entities
             return true;
         }
 
+        private static HumanoidPuppeteerRuntimeData MoveData(AbstractCreature creature)
+        {
+            try
+            {
+                return creature.GetPuppeteer()?.HumanoidReferences?.RuntimeData;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The compass direction the creature's body faces, in degrees around the world's up axis (0 is +Z, 90 is
+        /// +X). Null if it has no puppeteer.
+        /// </summary>
+        public static float? GetFacing(this AbstractCreature creature) => MoveData(creature)?.CreatureYRotation;
+
+        /// <summary>
+        /// Turns the creature to face a compass direction, in degrees (see <see cref="GetFacing"/>). It turns on its
+        /// own feet over a moment, and while walking it walks that way. Only works while it has a puppeteer.
+        /// </summary>
+        public static bool SetFacing(this AbstractCreature creature, float degrees)
+        {
+            var data = MoveData(creature);
+            if (data == null)
+                return false;
+            data.UpdateTargetYRot(Mathf.Repeat(degrees + 180f, 360f) - 180f);
+            return true;
+        }
+
+        /// <summary>Turns the creature to face a point (only the direction along the ground counts).</summary>
+        public static bool FaceTowards(this AbstractCreature creature, Vector3 point)
+        {
+            var offset = point - creature.GetPosition();
+            if (offset.x * offset.x + offset.z * offset.z < 1e-6f)
+                return false;
+            return creature.SetFacing(Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg);
+        }
+
+        /// <summary>
+        /// Makes the creature walk towards a point. Call it again as the point moves; it keeps walking until you
+        /// call <see cref="SetWalking"/> with false.
+        /// </summary>
+        public static bool WalkTowards(this AbstractCreature creature, Vector3 point)
+            => creature.FaceTowards(point) && creature.SetWalking(true);
+
         // ------------------------------------------------------------ body
 
         /// <summary>All limbs that currently belong to the creature.</summary>

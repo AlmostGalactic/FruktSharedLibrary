@@ -58,12 +58,19 @@ namespace FruktSharedLibrary.Entities
 
         /// <summary>The creature closest to a point (measured to its root limb).</summary>
         public static AbstractCreature GetNearest(Vector3 position, float maxDistance = float.PositiveInfinity, bool livingOnly = false)
+            => GetNearest(position, livingOnly ? c => c.IsLiving() : null, maxDistance);
+
+        /// <summary>
+        /// The closest creature to a point that <paramref name="filter"/> accepts, for example
+        /// <c>c => c.IsLiving() &amp;&amp; c.IsHuman() &amp;&amp; c != me</c>. A null filter accepts every creature.
+        /// </summary>
+        public static AbstractCreature GetNearest(Vector3 position, Func<AbstractCreature, bool> filter, float maxDistance = float.PositiveInfinity)
         {
             AbstractCreature best = null;
             float bestDistance = maxDistance * maxDistance;
             foreach (var creature in All)
             {
-                if (livingOnly && !creature.IsLiving())
+                if (filter != null && !filter(creature))
                     continue;
                 float distance = (creature.GetPosition() - position).sqrMagnitude;
                 if (distance < bestDistance)

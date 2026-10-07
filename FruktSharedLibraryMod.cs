@@ -58,6 +58,7 @@ namespace FruktSharedLibrary
             PauseMenu.Update();
             MainMenuButton.Update();
             Notifications.Update();
+            Combat.Bullets.Update();
             GameEvents.RaiseUpdate();
         }
 
@@ -66,6 +67,8 @@ namespace FruktSharedLibrary
         public override void OnLateUpdate()
         {
             Objects.Joints.Update();
+            // After the camera has moved, so labels don't trail a frame behind.
+            UI.WorldLabels.Update();
             GameEvents.RaiseLateUpdate();
         }
 

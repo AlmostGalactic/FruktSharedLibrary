@@ -70,6 +70,30 @@ Don't copy the game's UI with a plain `Instantiate`. The copy won't animate or r
 game's UI pieces get their services handed to them when they're created. `CloneGameUi` takes care of that. The
 [IL2CPP notes](il2cpp-notes.md) explain why.
 
+## World labels
+
+`WorldLabels` puts text over things in the world, like a name over someone's head, in the game's display font. A
+label stays the same size on screen however far away the thing is, hides when it's behind the camera or further
+than its `MaxDistance` (60 m), and sits under the game's menus.
+
+```csharp
+var head = human.GetLimb(HumanoidNodeTagValue.Head);
+var tag = WorldLabels.Add(head.GetMovingTransform(), "Red", Color.red, Vector3.up * 0.45f);
+tag.Text = "Blue";
+tag.Color = Color.blue;
+tag.Remove();
+```
+
+| Member | Description |
+|--------|-------------|
+| `WorldLabels.Add(transform, text, color, offset, size = 30)` | A label that follows a transform, and goes away by itself when the transform is destroyed. |
+| `WorldLabels.Add(() => position, text, color, offset, size = 30)` | A label at a position you work out each frame. Remove it yourself. |
+| `WorldLabels.All`, `RemoveAll()` | Every label, and taking them all away. |
+| `label.Text`, `Color`, `Offset`, `Size`, `MaxDistance`, `Visible` | Change any of these at any time. |
+| `label.Exists`, `OnScreen`, `Remove()` | Whether it's still around, whether it's drawn this frame, and taking it away. |
+
+To follow a body part, use its `GetMovingTransform()`, not `limb.transform`, which doesn't move with the body.
+
 ## GuiStyles
 
 If you're drawing an overlay in `OnGUI`, `GuiStyles` has the styles and textures the library's plain fallback menu
