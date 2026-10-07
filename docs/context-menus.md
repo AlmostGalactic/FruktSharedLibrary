@@ -17,7 +17,7 @@ real game menu actions, so they look and act just like the built-in ones.
 
 ```csharp
 ContextMenus.AddCreatureAction("Heal", creature => creature.Heal());
-ContextMenus.AddLimbAction("Pop", limb => limb.Damage(limb.transform.position, 6));
+ContextMenus.AddLimbAction("Pop", limb => limb.Damage(limb.GetPosition(), 6));
 ContextMenus.AddAction(ContextMenuTarget.Firearm, "Empty magazine", ctx => EmptyMagazine(ctx.Firearm));
 ```
 
@@ -82,6 +82,11 @@ tools.AddGroup("Throw")
 `AddGroup` gives you the new inner group, while the other methods give you back the group you called them on.
 That's the same as `AddSubPage` in the mod menu. If you want to add more lines to the outer group afterwards,
 keep a reference to it, like `tools` above.
+
+## Is a menu open?
+
+`ContextMenus.IsOpen` tells you whether a right-click menu is showing, and `ContextMenus.Close()` closes it, the same
+as clicking away from it.
 
 ## Adding and removing later
 

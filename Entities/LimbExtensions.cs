@@ -33,6 +33,25 @@ namespace FruktSharedLibrary.Entities
             return physics.Exists() ? physics.m_rb : null;
         }
 
+        /// <summary>
+        /// Where the limb is in the world right now: the centre of its rigidbody. Use this rather than
+        /// <c>limb.transform.position</c>, which stays where the limb was put together and doesn't follow the body.
+        /// </summary>
+        public static Vector3 GetPosition(this AbstractLimb limb)
+        {
+            var body = limb.GetRigidbody();
+            if (body.Exists())
+                return body.worldCenterOfMass;
+            return limb.Exists() ? limb.transform.position : Vector3.zero;
+        }
+
+        /// <summary>The transform that moves with the limb (its rigidbody's), for following it with labels or effects.</summary>
+        public static Transform GetMovingTransform(this AbstractLimb limb)
+        {
+            var body = limb.GetRigidbody();
+            return body.Exists() ? body.transform : limb.Exists() ? limb.transform : null;
+        }
+
         /// <summary>The voxel mesh the limb is made of (what bullets and cuts carve into).</summary>
         public static VoxelMesh GetVoxelMesh(this AbstractLimb limb) => limb.Exists() ? limb.References?.Mesh : null;
 

@@ -50,7 +50,7 @@ namespace FruktSharedLibrary.Combat
                 return false;
             }
             return Send(receiver.Cast<IIndexEffectorSignalReceiver>(), receiver.VoxelMesh, worldPoint, radiusVoxels, signal,
-                direction ?? (limb.transform.position - worldPoint));
+                direction ?? (limb.GetPosition() - worldPoint));
         }
 
         /// <summary>Destroys tissue at a point on whatever creature the collider belongs to (e.g. a raycast hit).</summary>

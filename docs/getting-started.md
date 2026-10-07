@@ -112,7 +112,7 @@ public class ExampleMod : MelonMod
         // Right-click menu entries (shown on every body)
         ContextMenus.AddCreatureAction("Heal", creature => creature.Heal());
         ContextMenus.AddCreatureAction("Launch", creature => creature.AddForce(Vector3.up * 800f));
-        ContextMenus.AddLimbAction("Pop", limb => limb.Damage(limb.transform.position, 6));
+        ContextMenus.AddLimbAction("Pop", limb => limb.Damage(limb.GetPosition(), 6));
 
         // A drop-down group in the right-click menu, with a nested group inside
         var example = ContextMenus.AddCreatureGroup("Example")

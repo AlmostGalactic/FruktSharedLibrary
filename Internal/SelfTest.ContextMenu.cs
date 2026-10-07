@@ -78,8 +78,10 @@ namespace FruktSharedLibrary.Internal
                 yield return Wait(1.2f);
                 rows = MenuRows();
                 Check("Groups are collapsed again when the menu reopens", rows.Contains("+ SELF-TEST GROUP") && !rows.Contains("GROUP ACTION"), string.Join(" | ", rows));
-                Section("Context group close", () => service.CloseMenu());
+                Check("ContextMenus.IsOpen sees the open menu", ContextMenus.IsOpen);
+                Section("Context group close", () => Check("ContextMenus.Close() closes it", ContextMenus.Close()));
                 yield return Wait(0.6f);
+                Check("The menu is closed", !ContextMenus.IsOpen && !MenuOpen());
 
                 group.Remove();
                 Check("Removing a group takes it out of built menus", ContextMenuCarrier.ActionFor(handler, group.Entry) == null);

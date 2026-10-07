@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Entities;
 using FruktSharedLibrary.Interop;
 using Il2CppLVA.Creatures;
 using Il2CppLVA.Limbs;
 using Il2CppMap.Spinner;
 using Il2CppPlayer.ContextMenu;
+using Il2CppServices.UI;
 using Il2CppSpawnables.Misc;
 using Il2CppSpawnables.Props;
 using Il2CppSpawnables.Weapons;
@@ -332,6 +334,36 @@ namespace FruktSharedLibrary.UI
             var entry = AddAction(target, ctx => ToggleLabel(label, getState, ctx), ctx => setState(ctx, !getState(ctx)), showIf, priority);
             entry.KeepOpen = true;
             return entry;
+        }
+
+        /// <summary>True while a right-click menu is open.</summary>
+        public static bool IsOpen
+        {
+            get
+            {
+                try
+                {
+                    var window = GameServices.TryGet<IContextMenuWindow>();
+                    if (window != null)
+                        return window.IsOpen;
+                    var view = GameServices.FindObject<Il2CppViews.ContextMenu.ContextMenuWindow>();
+                    return view != null && view.gameObject.activeInHierarchy;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>Closes the right-click menu if one is open, the same as clicking away from it.</summary>
+        public static bool Close()
+        {
+            var service = GameServices.TryGet<IContextMenuService>();
+            if (service == null)
+                return false;
+            service.CloseMenu();
+            return true;
         }
 
         /// <summary>Removes every action that was added by any mod.</summary>
