@@ -35,6 +35,20 @@ extensions for game classes.
 You'd expect it to return the limb's node in the body's hierarchy. It doesn't; it creates a new one that isn't
 attached to anything. The real node is `limb.References.Node`, or use the library's `limb.GetNode()`.
 
+## A limb's `transform` doesn't move with the body
+
+`limb.transform.position` is where the limb was when the body was put together, and it stays there while the
+body walks, falls or gets thrown. The part that moves is the limb's rigidbody. Use the library's
+`limb.GetPosition()` for where a limb really is, and `limb.GetMovingTransform()` for something to follow it with.
+Damage, hit checks and labels that use `limb.transform` end up in the wrong place without any error.
+
+## Pushing limbs around doesn't pose a body
+
+A living person's limbs are held to their animated skeleton by very stiff joints, so forces on an arm mostly
+shove the whole body. To move an arm, go through the skeleton's hand IK instead:
+`creature.GetPuppeteer().HumanoidReferences.IK.RightHandEffectorPlacer.SetLocalPosition(...)` (and the left one)
+puts the hand where you say, and the physical arm follows it.
+
 ## A lot of `ref` parameters are `out` in the interop
 
 For example `TryGetNativeLimbByTag(tag, out limb)`. Just do what the compiler tells you.
