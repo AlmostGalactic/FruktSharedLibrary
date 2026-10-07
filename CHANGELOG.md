@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
 
 - Your own guns: `Inventory.AddGun` adds a gun under Weapons that fires on left click (or while held, if it's
   automatic) at the rate you set, from a muzzle that follows its model in the hand.

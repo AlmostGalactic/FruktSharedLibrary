@@ -63,9 +63,9 @@ namespace FruktSharedLibrary.Internal
                 Check("GetNearest without a filter still works", Creatures.GetNearest(first.GetPosition(), 0.5f, livingOnly: true)?.Pointer == first.Pointer);
                 Check("GetFacing reads which way they face", first.GetFacing().HasValue);
             });
-            var right = LocalPlayer.CameraRotation * Vector3.right;
-            right.y = 0f;
-            var goal = first.GetPosition() + right.normalized * 6f;
+            // Somewhere with nothing in the way (earlier tests leave props about).
+            var right = ClearDirection(first.GetPosition(), 6.5f);
+            var goal = first.GetPosition() + right * 6f;
             float startDistance = Flat(goal - first.GetPosition());
             Check("WalkTowards starts them walking", first.WalkTowards(goal) && first.IsWalking());
             for (float end = Now() + 6f; Now() < end && Flat(goal - first.GetPosition()) > 1.5f;)
@@ -153,6 +153,23 @@ namespace FruktSharedLibrary.Internal
             Shot("bullets");
             yield return Wait(1.5f);
             Creatures.DeleteAll();
+        }
+
+        /// <summary>A flat direction from <paramref name="from"/> with nothing but people in the way for <paramref name="distance"/>.</summary>
+        private static Vector3 ClearDirection(Vector3 from, float distance)
+        {
+            var start = LocalPlayer.CameraRotation * Vector3.right;
+            start.y = 0f;
+            start.Normalize();
+            for (int step = 0; step < 12; step++)
+            {
+                var direction = Quaternion.Euler(0f, step * 30f, 0f) * start;
+                bool blocked = Physics.RaycastAll(from + Vector3.up * 0.1f, direction, distance, Utilities.Layers.Gameplay, QueryTriggerInteraction.Ignore)
+                    .Any(hit => Creatures.LimbFromCollider(hit.collider) == null);
+                if (!blocked)
+                    return direction;
+            }
+            return start;
         }
 
         private static void Hang(AbstractCreature creature, float distance)

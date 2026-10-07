@@ -48,7 +48,7 @@ Known rough edges, each enough for a patch:
 - Each bundle reload keeps the old version's assets in memory.
 - Prop holograms use the library's own see-through material, not the game's hologram look.
 
-## 0.3.0: in progress
+## 0.3.0: released
 
 The big features. That's five, so it meets the bar:
 
@@ -65,9 +65,9 @@ wounds made without a direction.
 
 Release steps:
 
-- [ ] Set the version to 0.3.0 (`FruktSharedLibraryMod.Version`) and turn the changelog's Unreleased section into 0.3.0.
-- [ ] A full self-test run on the release build.
-- [ ] Upload the DLL and XML docs to the GitHub release.
+- [x] Set the version to 0.3.0 (`FruktSharedLibraryMod.Version`) and turn the changelog's Unreleased section into 0.3.0.
+- [x] A full self-test run on the release build.
+- [x] Upload the DLL and XML docs to the GitHub release.
 
 ## Ideas for later
 
