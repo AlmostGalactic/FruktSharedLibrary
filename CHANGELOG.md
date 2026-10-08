@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.6
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- Fixed: the game could crash when a body healed by `Tissue.Regrow` was deleted, if it had been shot. The game keeps a
+  list of the holes in each limb and never expects them to fill, so regrown voxels are now taken off that list.
+  Changes to a limb are also spaced a few frames apart, and the game gets lasting memory for them.
+- `Tissue.Dissolve` eats flesh away from the outside in, all of it or only some organs, such as the bones.
+
 ## 0.3.5
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

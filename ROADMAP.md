@@ -91,6 +91,11 @@ Release steps:
 
 - [x] `Tissue.Regrow`, flesh that grows back.
 
+## 0.3.6: released
+
+- [x] Fixed a crash after `Tissue.Regrow`.
+- [x] `Tissue.Dissolve`, flesh eaten away.
+
 ## Ideas for later
 
 Nothing here is promised:

@@ -410,6 +410,27 @@ namespace FruktSharedLibrary.Internal
                 Check("Tissue.Regrow grows the flesh back", after > cut && after >= 99.9f, $"{cut:0.0} -> {after:0.0}");
                 Check("Nothing is left regrowing", Tissue.Active == 0);
             });
+            Tissue.Dissolving dissolving = null;
+            float before = 0f;
+            Section("Tissue (dissolve)", () =>
+            {
+                // The other arm: the left hand is needed whole further on.
+                arm = head.Exists() ? head.GetCreature()?.GetLimb(HumanoidNodeTagValue.RightForearm) : null;
+                before = arm.Exists() ? arm.GetWholeness() : -1f;
+                dissolving = Tissue.Dissolve(arm, 1f, 0.5f);
+                Check("Tissue.Dissolve starts", dissolving != null);
+            });
+            for (float end = Now() + 6f; Now() < end && dissolving != null && !dissolving.Done;) yield return null;
+            for (float end = Now() + 1f; Now() < end;) yield return null;
+            Section("Tissue (dissolved)", () =>
+            {
+                float after = arm.Exists() ? arm.GetWholeness() : 0f;
+                Check("Tissue.Dissolve eats the flesh away", dissolving != null && dissolving.Done && dissolving.Destroyed > 0 && after < before - 5f,
+                    $"{before:0.0} -> {after:0.0}, {dissolving?.Destroyed} voxels");
+                if (arm.Exists())
+                    Tissue.Regrow(arm, 0.5f);
+            });
+            for (float end = Now() + 4f; Now() < end && Tissue.Active > 0;) yield return null;
 
             float beforeMany = 0f;
             Section("Damage (several at once)", () =>

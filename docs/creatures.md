@@ -95,20 +95,27 @@ The organ classes are in `Il2CppLVA.Organs.Variants`: `Brain`, `Heart`, `Lung`, 
 you can call `GetOrganName`, `GetLimb`, `GetCreature`, `GetIntegrity` (how much of it is left) and
 `GetEfficiency` (how well it's working).
 
-## Growing flesh back
+## Growing flesh back and eating it away
 
 `Tissue.Regrow` brings back destroyed and damaged flesh, and the organs in it work again. It grows out from what's
 left of each limb over a few seconds, like healing. Limbs that came off, and pieces that came away from a limb,
 stay gone: only flesh that joins on to the body grows back.
 
+`Tissue.Dissolve` does the opposite: it eats flesh away from the outside in. It can take just some organs, so
+`organs: o => o.TryCast<Bone>() != null` takes the bones and leaves the rest (`Bone` is in
+`Il2CppLVA.Organs.Variants.Human`).
+
 | Member | Description |
 |--------|-------------|
 | `Regrow(creature, seconds = 3)` | Every limb the creature still has. Gives you a `Regrowth`. |
 | `Regrow(limb, seconds = 3)` | Just one limb. |
-| `Active`, `StopAll()` | How many regrowths are going on, and stop them all. |
+| `Dissolve(creature, seconds = 3, amount = 1, organs = null)` | Eats away `amount` (0 to 1) of the flesh of the organs `organs` picks (all of them without it), on every limb. Gives you a `Dissolving`. |
+| `Dissolve(limb, seconds = 3, amount = 1, organs = null)` | Just one limb. |
+| `Active`, `StopAll()` | How many are going on, and stop them all. |
 | `BudgetMs` | 2. All regrowth together takes at most this long each frame, so a big one takes longer rather than stalling the game. |
 
-A `Regrowth` has `Creature`, `Seconds`, `Restored` (voxels grown back so far), `Done` and `Stop()`. Bleeding wounds on a
+A `Regrowth` has `Creature`, `Seconds`, `Restored` (voxels grown back so far), `Done` and `Stop()`; a `Dissolving` has
+`Destroyed` in place of `Restored`. Bleeding wounds on a
 limb close and the blood on its skin is wiped off once it has healed. The blood itself isn't refilled; use
 `RefillBlood` or `Heal` for that.
 
