@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.4
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Damage.Apply(collider, wounds)` makes several wounds on a part in one go, which is much cheaper than one call
+  for each.
+- `Damage` cuts wound radii down to 16 voxels (`Damage.MaxRadiusVoxels`). A sphere that size already reaches across
+  a whole limb, and bigger ones could take a tenth of a second each.
+
 ## 0.3.3
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

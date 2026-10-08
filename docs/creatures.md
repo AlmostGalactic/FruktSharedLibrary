@@ -124,9 +124,15 @@ signal. Organs, pain, bleeding and limbs falling off all follow from that on the
 | `Apply(limb, worldPoint, radiusVoxels = 3, strength = 1, direction = null)` | A round wound on a limb. At strength 1 the middle of it is completely destroyed. |
 | `Apply(collider, worldPoint, ...)` | The same, on whatever creature the collider belongs to. |
 | `Apply(raycastHit, ...)` | The same, where a raycast hit. |
+| `Apply(collider, wounds, direction = null)` | Several wounds on one part at once, each a `(point, radiusVoxels, strength)`. Much cheaper than one call for each: use it for blasts. |
+| `MaxRadiusVoxels` | 16. Bigger radii are cut down to this. |
 | `Explosion(center, radius, force = 30, maxRadiusVoxels = 5, strength = 1)` | Damages every limb in range (worse near the middle) and pushes things away. Returns how many limbs it hit. |
 
 ```csharp
 if (LocalPlayer.Raycast(out var hit))
     Damage.Apply(hit, radiusVoxels: 4);
 ```
+
+A wound takes a few milliseconds, and the time grows with the cube of its radius. To hurt someone more, raise the
+strength rather than the radius: a 10-voxel wound at strength 100 tears off far more than a 16-voxel one at strength
+10, in a quarter of the time. In a blast that hits many parts, spread them over a few frames.

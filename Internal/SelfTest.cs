@@ -386,6 +386,21 @@ namespace FruktSharedLibrary.Internal
                     Damage.ApplySignal(head, headPoint, 3, 1f);
                 }
             });
+            float beforeMany = 0f;
+            Section("Damage (several at once)", () =>
+            {
+                var collider = head.Exists() ? head.GetComponentInChildrenIl2Cpp<Collider>() : null;
+                beforeMany = head.Exists() ? head.GetWholeness() : -1f;
+                var point = head.Exists() ? head.GetRigidbody().worldCenterOfMass : default;
+                Check("Damage.Apply takes several wounds at once", collider != null && Damage.Apply(collider,
+                    new List<(Vector3, int, float)> { (point, 3, 1f), (point + Vector3.up * 0.04f, 3, 1f) }));
+            });
+            for (float end = Now() + 1.5f; Now() < end;) yield return null;
+            Section("Damage (several, deferred)", () =>
+            {
+                float after = head.Exists() ? head.GetWholeness() : -1f;
+                Check("The wounds all land", after < beforeMany - 1e-4f, $"{beforeMany:0.####} -> {after:0.####}");
+            });
             if (!negativeWorked)
             {
                 for (float end = Now() + 1.5f; Now() < end;) yield return null;

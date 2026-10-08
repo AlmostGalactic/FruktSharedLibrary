@@ -83,6 +83,10 @@ Release steps:
 
 - [x] `Effects` explosions no longer stall the game.
 
+## 0.3.4: released
+
+- [x] `Damage.Apply` with several wounds at once, and a cap on wound size.
+
 ## Ideas for later
 
 Nothing here is promised:

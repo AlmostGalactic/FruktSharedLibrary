@@ -1,4 +1,5 @@
 ﻿using System;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System.Collections.Generic;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Entities;
@@ -24,6 +25,12 @@ namespace FruktSharedLibrary.Combat
         /// <summary>Strength that fully destroys the voxels in the sphere's core.</summary>
         public const float DefaultStrength = 1f;
 
+        /// <summary>
+        /// The biggest wound sphere, in voxels. A sphere this big already reaches across a whole limb, and the work
+        /// grows with the cube of the radius, so larger radii are cut down to it.
+        /// </summary>
+        public const int MaxRadiusVoxels = 16;
+
         private static Il2CppSystem.Object _hitSource;
         private static int _hitNumber;
 
@@ -31,7 +38,7 @@ namespace FruktSharedLibrary.Combat
         /// Destroys tissue in a sphere on <paramref name="limb"/> centred on the voxel nearest to
         /// <paramref name="worldPoint"/>.
         /// </summary>
-        /// <param name="radiusVoxels">Sphere radius in voxels (a human limb is roughly 6-12 voxels across).</param>
+        /// <param name="radiusVoxels">Sphere radius in voxels (a human limb is roughly 6-12 voxels across), at most <see cref="MaxRadiusVoxels"/>.</param>
         /// <param name="strength">How hard the tissue is hit; 1 destroys the core, lower values only weaken it.</param>
         /// <param name="direction">Direction the damage travels (used by wounds/blood); defaults to towards the limb.</param>
         public static bool Apply(AbstractLimb limb, Vector3 worldPoint, int radiusVoxels = 3, float strength = DefaultStrength, Vector3? direction = null)
@@ -74,6 +81,71 @@ namespace FruktSharedLibrary.Combat
             }
             return Send(receiver, receiver.VoxelMesh, worldPoint, radiusVoxels, -Mathf.Abs(strength),
                 direction ?? (collider.bounds.center - worldPoint));
+        }
+
+        /// <summary>
+        /// Several wounds on the creature part <paramref name="collider"/> belongs to, sent as one. Much cheaper than
+        /// calling <c>Apply</c> once for each, because the part is only worked out once: use it for blasts.
+        /// </summary>
+        /// <param name="wounds">Each wound's point, radius in voxels (at most <see cref="MaxRadiusVoxels"/>) and strength.</param>
+        public static bool Apply(Collider collider, IReadOnlyList<(Vector3 Point, int RadiusVoxels, float Strength)> wounds, Vector3? direction = null)
+        {
+            if (!collider.Exists() || wounds == null || wounds.Count == 0)
+                return false;
+            IIndexEffectorSignalReceiver receiver = null;
+            try
+            {
+                if (!EffectorsTools.TryGetIndexEffectorSignalReceiver(collider, out receiver) || receiver == null)
+                {
+                    var limb = Creatures.LimbFromCollider(collider);
+                    var found = limb.Exists() ? limb.GetComponentInChildrenIl2Cpp<LimbEffectorReceiver>() ?? limb.GetComponentInParentIl2Cpp<LimbEffectorReceiver>() : null;
+                    if (found == null)
+                        return false;
+                    receiver = found.Cast<IIndexEffectorSignalReceiver>();
+                }
+            }
+            catch (Exception e)
+            {
+                FruktLog.Debug("Receiver lookup failed: " + e.Message);
+                return false;
+            }
+            var mesh = receiver.VoxelMesh;
+            if (!mesh.Exists())
+                return false;
+            AbstractIndexEffectorSignalsHandler handler = null;
+            try
+            {
+                var spheres = new Il2CppStructArray<SphereSignalDescription>(wounds.Count);
+                for (int i = 0; i < wounds.Count; i++)
+                {
+                    var index = VoxelTools.PositionToVoxelIndex(mesh, wounds[i].Point);
+                    spheres[i] = new SphereSignalDescription(new int3(index.x, index.y, index.z),
+                        Mathf.Clamp(wounds[i].RadiusVoxels, 1, MaxRadiusVoxels), -Mathf.Abs(wounds[i].Strength));
+                }
+                var dir = direction ?? (collider.bounds.center - wounds[0].Point);
+                dir = dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector3.down;
+                var signals = SphereEffectorSignalsSamples.RadialFalloffNoisedSphereEffector<Destruction>(
+                    spheres, 0.35f, 0, new IndexEffectorDescription(dir, NextHit()), SphereOverlapRule.StrongestWins);
+                handler = signals;
+                receiver.Receive(signals);
+                return true;
+            }
+            catch (Exception e)
+            {
+                FruktLog.Warning("Applying damage failed: " + e.Message);
+                return false;
+            }
+            finally
+            {
+                try
+                {
+                    handler?.Dispose();
+                }
+                catch
+                {
+                    // Already disposed by the receiver.
+                }
+            }
         }
 
         /// <summary>Destroys tissue where a raycast hit a creature.</summary>
@@ -128,7 +200,7 @@ namespace FruktSharedLibrary.Combat
                 var description = new IndexEffectorDescription(dir, NextHit());
 
                 var signals = SphereEffectorSignalsSamples.RadialFalloffNoisedSphereEffector<Destruction>(
-                    center, Mathf.Max(1, radiusVoxels), signal, 0.35f, 0, description);
+                    center, Mathf.Clamp(radiusVoxels, 1, MaxRadiusVoxels), signal, 0.35f, 0, description);
                 handler = signals;
                 receiver.Receive(signals);
                 return true;
