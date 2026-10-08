@@ -75,6 +75,10 @@ Release steps:
 - [x] `Effects`, cube explosions, muzzle flashes, fire, smoke and sparks.
 - [x] Fixed `WorldLabels` stopping after an invalid cast.
 
+## 0.3.2: released
+
+- [x] Fixed the explosion smoke in `Effects`.
+
 ## Ideas for later
 
 Nothing here is promised:

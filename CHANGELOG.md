@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- Fixed: `Effects.Explosion` smoke was nearly black and far too big up close. It is now grey and smaller.
+
 ## 0.3.1
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

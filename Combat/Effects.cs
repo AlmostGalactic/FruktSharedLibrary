@@ -70,7 +70,7 @@ namespace FruktSharedLibrary.Combat
         /// <summary>A puff of smoke that swells and thins away.</summary>
         public static void Smoke(Vector3 at, float size = 0.3f, float life = 1.5f, Vector3? velocity = null, float darkness = 0.3f)
         {
-            var ramp = RampFor(new Color(darkness, darkness, darkness), new Color(darkness, darkness, darkness) * 0.4f, false);
+            var ramp = RampFor(new Color(darkness, darkness, darkness), new Color(darkness, darkness, darkness) * 0.4f, true);
             var v = (velocity ?? Vector3.up * 0.8f) + Random.insideUnitSphere * 0.25f;
             Spawn(at + Random.insideUnitSphere * size * 0.15f, v, size * 0.4f, size * Random.Range(0.9f, 1.4f), life * Random.Range(0.8f, 1.2f), ramp, -0.2f, 1.2f, 0.45f, false);
         }
@@ -165,11 +165,11 @@ namespace FruktSharedLibrary.Combat
                     Random.Range(0.5f, 1f), fire, -2.5f, 2.2f, 0.4f, false);
             }
 
-            var smoke = RampFor(new Color(0.22f, 0.21f, 0.2f), new Color(0.05f, 0.05f, 0.05f), false);
+            var smoke = RampFor(new Color(0.34f, 0.32f, 0.3f), new Color(0.12f, 0.12f, 0.12f), true);
             for (int i = 0; i < 34; i++)
             {
                 var dir = (Random.onUnitSphere * 0.6f + Vector3.up).normalized;
-                Spawn(at + Random.insideUnitSphere * 0.3f * s, dir * Random.Range(1.2f, 4f) * s, Random.Range(0.18f, 0.3f) * s, Random.Range(0.45f, 0.8f) * s,
+                Spawn(at + Random.insideUnitSphere * 0.3f * s, dir * Random.Range(1.2f, 4f) * s, Random.Range(0.1f, 0.16f) * s, Random.Range(0.22f, 0.36f) * s,
                     Random.Range(1.6f, 3f), smoke, -1.4f, 1.2f, 0.5f, false);
             }
 
