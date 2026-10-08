@@ -386,6 +386,31 @@ namespace FruktSharedLibrary.Internal
                     Damage.ApplySignal(head, headPoint, 3, 1f);
                 }
             });
+            AbstractLimb arm = null;
+            Section("Tissue (cut)", () =>
+            {
+                arm = head.Exists() ? head.GetCreature()?.GetLimb(HumanoidNodeTagValue.LeftForearm) : null;
+                Check("Tissue: there's an arm to cut", arm != null && Damage.Apply(arm, arm.GetPosition(), 8, 10f));
+            });
+            for (float end = Now() + 1.5f; Now() < end;) yield return null;
+            float cut = 0f;
+            Tissue.Regrowth regrowth = null;
+            Section("Tissue (regrow)", () =>
+            {
+                cut = arm.Exists() ? arm.GetWholeness() : -1f;
+                regrowth = Tissue.Regrow(arm, 1.5f);
+                Check("Tissue.Regrow starts", regrowth != null && cut < 99.5f, $"wholeness {cut:0.0}");
+            });
+            for (float end = Now() + 6f; Now() < end && regrowth != null && !regrowth.Done;) yield return null;
+            for (float end = Now() + 1f; Now() < end;) yield return null;
+            Section("Tissue (grown back)", () =>
+            {
+                float after = arm.Exists() ? arm.GetWholeness() : -1f;
+                Check("Tissue.Regrow finishes", regrowth != null && regrowth.Done, $"{regrowth?.Restored} voxels");
+                Check("Tissue.Regrow grows the flesh back", after > cut && after >= 99.9f, $"{cut:0.0} -> {after:0.0}");
+                Check("Nothing is left regrowing", Tissue.Active == 0);
+            });
+
             float beforeMany = 0f;
             Section("Damage (several at once)", () =>
             {

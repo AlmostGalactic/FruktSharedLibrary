@@ -5,7 +5,7 @@
 | [Getting started](getting-started.md) | Setting up a mod project, and a full example mod |
 | [Core](core.md) | `GameServices`, `GameEvents`, `GameState`, `Scheduler`, `Patcher`, `FruktLog` |
 | [World, player and sounds](world-and-player.md) | `World`, `LocalPlayer`, `Sounds` |
-| [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the body simulation, `Damage` |
+| [Creatures and damage](creatures.md) | `Creatures`, creature/limb/organ extensions, the body simulation, `Damage`, `Tissue` |
 | [Spawning](spawning.md) | `Spawner`, `FirearmType`, firearm extensions, spawning your own models |
 | [Joints, object events and builds](objects.md) | `Joints`, `JointHandle`, `ObjectEvents`, `Builds`, `Build` |
 | [Inventory, toolbar, tools and props](inventory.md) | `Inventory`, `InventoryItem`, `Toolbar`, `ModTool`, `ModGun`, `Bullets`, `Effects`, `ModProp` |

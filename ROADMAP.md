@@ -87,6 +87,10 @@ Release steps:
 
 - [x] `Damage.Apply` with several wounds at once, and a cap on wound size.
 
+## 0.3.5: released
+
+- [x] `Tissue.Regrow`, flesh that grows back.
+
 ## Ideas for later
 
 Nothing here is promised:

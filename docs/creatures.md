@@ -95,6 +95,32 @@ The organ classes are in `Il2CppLVA.Organs.Variants`: `Brain`, `Heart`, `Lung`, 
 you can call `GetOrganName`, `GetLimb`, `GetCreature`, `GetIntegrity` (how much of it is left) and
 `GetEfficiency` (how well it's working).
 
+## Growing flesh back
+
+`Tissue.Regrow` brings back destroyed and damaged flesh, and the organs in it work again. It grows out from what's
+left of each limb over a few seconds, like healing. Limbs that came off, and pieces that came away from a limb,
+stay gone: only flesh that joins on to the body grows back.
+
+| Member | Description |
+|--------|-------------|
+| `Regrow(creature, seconds = 3)` | Every limb the creature still has. Gives you a `Regrowth`. |
+| `Regrow(limb, seconds = 3)` | Just one limb. |
+| `Active`, `StopAll()` | How many regrowths are going on, and stop them all. |
+| `BudgetMs` | 2. All regrowth together takes at most this long each frame, so a big one takes longer rather than stalling the game. |
+
+A `Regrowth` has `Creature`, `Seconds`, `Restored` (voxels grown back so far), `Done` and `Stop()`. Bleeding wounds on a
+limb close and the blood on its skin is wiped off once it has healed. The blood itself isn't refilled; use
+`RefillBlood` or `Heal` for that.
+
+```csharp
+var person = Creatures.GetAimedCreature();
+if (person != null)
+{
+    person.Heal();
+    Tissue.Regrow(person, 4f);
+}
+```
+
 ## The simulation underneath
 
 Every creature, limb and organ is an LVA entity. Each one has parameters, which are numbers like pain, blood or

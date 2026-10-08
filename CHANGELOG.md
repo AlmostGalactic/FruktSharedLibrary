@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Tissue.Regrow` grows destroyed and damaged flesh back on a creature or a limb, out from what's left, over a few
+  seconds. Limbs that came off stay off.
+
 ## 0.3.4
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build
