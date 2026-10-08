@@ -111,6 +111,7 @@ stay gone: only flesh that joins on to the body grows back.
 | `Regrow(limb, seconds = 3)` | Just one limb. |
 | `Dissolve(creature, seconds = 3, amount = 1, organs = null)` | Eats away `amount` (0 to 1) of the flesh of the organs `organs` picks (all of them without it), on every limb. Gives you a `Dissolving`. |
 | `Dissolve(limb, seconds = 3, amount = 1, organs = null)` | Just one limb. |
+| `Dissolve(limb, from, seconds = 3, amount = 1, roughness = 0.5, organs = null)` | One limb, eaten from the point `from` outwards. `roughness` (0 to 1) makes the edge uneven. |
 | `Active`, `StopAll()` | How many are going on, and stop them all. |
 | `BudgetMs` | 2. All regrowth together takes at most this long each frame, so a big one takes longer rather than stalling the game. |
 

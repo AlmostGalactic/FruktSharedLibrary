@@ -96,6 +96,10 @@ Release steps:
 - [x] Fixed a crash after `Tissue.Regrow`.
 - [x] `Tissue.Dissolve`, flesh eaten away.
 
+## 0.3.7: released
+
+- [x] `Tissue.Dissolve` from a point, with an uneven edge.
+
 ## Ideas for later
 
 Nothing here is promised:

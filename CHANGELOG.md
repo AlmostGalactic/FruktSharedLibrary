@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.7
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Tissue.Dissolve(limb, from, ...)` eats a limb away starting at a point, such as where something went in, and
+  spreads out from there with an uneven edge.
+
 ## 0.3.6
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

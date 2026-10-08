@@ -417,7 +417,7 @@ namespace FruktSharedLibrary.Internal
                 // The other arm: the left hand is needed whole further on.
                 arm = head.Exists() ? head.GetCreature()?.GetLimb(HumanoidNodeTagValue.RightForearm) : null;
                 before = arm.Exists() ? arm.GetWholeness() : -1f;
-                dissolving = Tissue.Dissolve(arm, 1f, 0.5f);
+                dissolving = Tissue.Dissolve(arm, arm.GetPosition(), 1f, 0.5f, 0.6f);
                 Check("Tissue.Dissolve starts", dissolving != null);
             });
             for (float end = Now() + 6f; Now() < end && dissolving != null && !dissolving.Done;) yield return null;

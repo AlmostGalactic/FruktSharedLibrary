@@ -16,6 +16,7 @@ using Il2CppLVA.Organs.EffectorsPerception.Collectors;
 using Il2CppVoxelMeshGeneration;
 using Il2CppVoxelMeshGeneration.Painting;
 using Il2CppVoxelMeshGeneration.Separation;
+using Il2CppVoxelMeshGeneration.Tools;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -45,6 +46,8 @@ namespace FruktSharedLibrary.Entities
             internal Func<AbstractOrgan, bool> Organs;
             internal float Amount = 1f;
             internal int Count;
+            internal float Roughness;
+            internal float Seed;
 
             /// <summary>Whose flesh it is.</summary>
             public AbstractCreature Creature { get; }
@@ -95,6 +98,7 @@ namespace FruktSharedLibrary.Entities
             internal float Credit;
             internal int Found;
             internal int SentFrame = -100;
+            internal int3? Start;
         }
 
         /// <summary>The time all regrowth together may take each frame, in milliseconds.</summary>
@@ -168,6 +172,29 @@ namespace FruktSharedLibrary.Entities
             var job = new Dissolving(limb.GetCreature(), seconds) { Organs = organs, Amount = Mathf.Clamp01(amount) };
             job.Limbs.Add(new LimbJob { Limb = limb });
             Jobs.Add(job);
+            return job;
+        }
+
+        /// <summary>
+        /// Eats the limb away starting at <paramref name="from"/> (a point in the world, such as where something
+        /// went in) and spreading out from there. <paramref name="roughness"/> from 0 to 1 makes the edge uneven, so it
+        /// eats further in some directions than others.
+        /// </summary>
+        public static Dissolving Dissolve(AbstractLimb limb, Vector3 from, float seconds = 3f, float amount = 1f, float roughness = 0.5f, Func<AbstractOrgan, bool> organs = null)
+        {
+            var job = Dissolve(limb, seconds, amount, organs);
+            if (job != null)
+            {
+                // Worked out now, while the limb is where the point was given.
+                var mesh = limb.GetVoxelMesh();
+                if (mesh.Exists())
+                {
+                    var start = VoxelTools.PositionToVoxelIndex(mesh, from);
+                    job.Limbs[0].Start = new int3(start.x, start.y, start.z);
+                }
+                job.Roughness = Mathf.Clamp01(roughness);
+                job.Seed = UnityEngine.Random.Range(0f, 1000f);
+            }
             return job;
         }
 
@@ -256,7 +283,7 @@ namespace FruktSharedLibrary.Entities
             int limit = Mathf.Min(MaxBatch, (int)l.Credit);
             if (!job.Grows)
             {
-                // Eaten from the outside in: the list is already in that order.
+                // The list is already in the order it gets eaten.
                 batch.AddRange(l.Pending.GetRange(0, Mathf.Min(limit, l.Pending.Count)));
                 l.Pending.RemoveRange(0, batch.Count);
                 l.Credit -= batch.Count;
@@ -348,16 +375,51 @@ namespace FruktSharedLibrary.Entities
             if (l.Cursor < l.Total)
                 return;
             l.Scanned = true;
-            // Growing goes from the middle of the limb outwards; eating goes from the outside in.
-            var middle = new float3(l.Size.x, l.Size.y, l.Size.z) * 0.5f;
-            int sign = job.Grows ? 1 : -1;
-            l.Pending.Sort((a, b) => sign * math.distancesq(new float3(a.x, a.y, a.z), middle).CompareTo(math.distancesq(new float3(b.x, b.y, b.z), middle)));
+            if (l.Start.HasValue)
+            {
+                // Out from the point it started at, further in some directions than others.
+                var origin = new float3(l.Start.Value.x, l.Start.Value.y, l.Start.Value.z);
+                var order = new Dictionary<int3, float>(l.Pending.Count);
+                foreach (var index in l.Pending)
+                {
+                    var at = new float3(index.x, index.y, index.z);
+                    float wobble = Lumps(at * 0.18f, job.Seed) - 0.5f;
+                    float speck = UnityEngine.Random.value - 0.5f;
+                    order[index] = math.distance(at, origin) * (1f + job.Roughness * 1.4f * wobble) + job.Roughness * 3f * speck;
+                }
+                l.Pending.Sort((a, b) => order[a].CompareTo(order[b]));
+            }
+            else
+            {
+                // Growing goes from the middle of the limb outwards; eating goes from the outside in.
+                var middle = new float3(l.Size.x, l.Size.y, l.Size.z) * 0.5f;
+                int sign = job.Grows ? 1 : -1;
+                l.Pending.Sort((a, b) => sign * math.distancesq(new float3(a.x, a.y, a.z), middle).CompareTo(math.distancesq(new float3(b.x, b.y, b.z), middle)));
+            }
             if (!job.Grows && job.Amount < 1f)
             {
                 int keep = Mathf.RoundToInt(l.Pending.Count * job.Amount);
                 l.Pending.RemoveRange(keep, l.Pending.Count - keep);
             }
             l.Found = l.Pending.Count;
+        }
+
+        // Smooth noise from 0 to 1: nearby voxels get similar values, so the uneven edge comes out in lumps.
+        private static float Lumps(float3 p, float seed)
+        {
+            var cell = math.floor(p);
+            var f = p - cell;
+            f = f * f * (3f - 2f * f);
+            float Corner(float x, float y, float z)
+            {
+                float h = math.sin(math.dot(cell + new float3(x, y, z), new float3(12.9898f, 78.233f, 37.719f)) + seed) * 43758.5453f;
+                return h - math.floor(h);
+            }
+            float x00 = math.lerp(Corner(0, 0, 0), Corner(1, 0, 0), f.x);
+            float x10 = math.lerp(Corner(0, 1, 0), Corner(1, 1, 0), f.x);
+            float x01 = math.lerp(Corner(0, 0, 1), Corner(1, 0, 1), f.x);
+            float x11 = math.lerp(Corner(0, 1, 1), Corner(1, 1, 1), f.x);
+            return math.lerp(math.lerp(x00, x10, f.y), math.lerp(x01, x11, f.y), f.z);
         }
 
         private static bool Touches(LimbJob l, int3 index, HashSet<int3> chosen)
