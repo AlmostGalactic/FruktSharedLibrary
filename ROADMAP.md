@@ -79,6 +79,10 @@ Release steps:
 
 - [x] Fixed the explosion smoke in `Effects`.
 
+## 0.3.3: released
+
+- [x] `Effects` explosions no longer stall the game.
+
 ## Ideas for later
 
 Nothing here is promised:

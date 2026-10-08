@@ -171,7 +171,7 @@ namespace FruktSharedLibrary.Internal
 
             int cubes = Effects.Count;
             Effects.Explosion(LocalPlayer.GetPointInFront(8f), 2f, shake: false);
-            Check("Effects.Explosion makes plenty of cubes", Effects.Count > cubes + 100, $"{Effects.Count - cubes} cubes");
+            Check("Effects.Explosion makes plenty of cubes", Effects.Count > cubes + 80, $"{Effects.Count - cubes} cubes");
             Effects.Burst(start, Color.cyan, 10);
             Effects.Smoke(start);
             Effects.Flame(start);

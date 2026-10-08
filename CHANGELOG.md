@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.3
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Effects` runs much faster. Its cubes are made a few at a time ahead of need instead of all at once when
+  something explodes, lights are reused and only a few shine at once, and `Explosion` uses fewer, bigger cubes.
+
 ## 0.3.2
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

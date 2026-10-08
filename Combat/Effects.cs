@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Gameplay;
@@ -38,7 +38,15 @@ namespace FruktSharedLibrary.Combat
         private static readonly Stack<Particle> Spare = new();
         private static readonly Dictionary<(Color, Color, bool), Material[]> Ramps = new();
         private static readonly List<(Light Light, float Born, float Life, float Intensity)> Lights = new();
+        private static readonly Stack<Light> SpareLights = new();
         private static Mesh _cube;
+        private static bool _warm;
+
+        // Lights are expensive to draw, so only a few flash at once; a new one takes over the oldest.
+        private const int MaxLights = 6;
+        // Making cubes is the slow part, so the pool is filled a few at a time once effects are first used.
+        private const int WarmPool = 450;
+        private const int WarmPerFrame = 30;
 
         /// <summary>How many cubes are alive right now.</summary>
         public static int Count => Live.Count;
@@ -88,14 +96,36 @@ namespace FruktSharedLibrary.Combat
         {
             try
             {
-                var go = new GameObject("FSL light");
-                go.transform.position = at;
-                var light = go.AddComponent<Light>();
-                light.type = LightType.Point;
+                if (Lights.Count >= MaxLights)
+                {
+                    int oldest = 0;
+                    for (int i = 1; i < Lights.Count; i++)
+                    {
+                        if (Lights[i].Born < Lights[oldest].Born)
+                            oldest = i;
+                    }
+                    RetireLight(oldest);
+                }
+                Light light = null;
+                while (SpareLights.Count > 0 && light == null)
+                {
+                    light = SpareLights.Pop();
+                    if (!light.Exists())
+                        light = null;
+                }
+                if (light == null)
+                {
+                    var go = new GameObject("FSL light");
+                    Object.DontDestroyOnLoad(go);
+                    light = go.AddComponent<Light>();
+                    light.type = LightType.Point;
+                    light.shadows = LightShadows.None;
+                }
+                light.transform.position = at;
+                light.gameObject.SetActive(true);
                 light.color = color;
                 light.range = range;
                 light.intensity = intensity;
-                light.shadows = LightShadows.None;
                 Lights.Add((light, Time.time, Mathf.Max(0.02f, seconds), intensity));
             }
             catch (Exception e)
@@ -154,34 +184,34 @@ namespace FruktSharedLibrary.Combat
             bool onGround = Physics.Raycast(at + Vector3.up * 0.2f, Vector3.down, out var ground, size, Layers.Gameplay, QueryTriggerInteraction.Ignore);
 
             var core = RampFor(new Color(1f, 0.85f, 0.45f), new Color(1f, 0.45f, 0.08f), true);
-            for (int i = 0; i < 10; i++)
-                Spawn(at, Random.insideUnitSphere * 2f * s, Random.Range(0.35f, 0.6f) * s, 0.1f * s, Random.Range(0.15f, 0.25f), core, 0f, 3f, 0.4f, false);
+            for (int i = 0; i < 6; i++)
+                Spawn(at, Random.insideUnitSphere * 2f * s, Random.Range(0.4f, 0.7f) * s, 0.1f * s, Random.Range(0.15f, 0.25f), core, 0f, 3f, 0.4f, false);
 
             var fire = RampFor(new Color(1f, 0.5f, 0.1f), new Color(0.5f, 0.06f, 0.02f), true);
-            for (int i = 0; i < 56; i++)
+            for (int i = 0; i < 34; i++)
             {
                 var dir = (Random.onUnitSphere + Vector3.up * 0.35f).normalized;
-                Spawn(at + Random.insideUnitSphere * 0.15f * s, dir * Random.Range(2.5f, 7f) * s, Random.Range(0.22f, 0.45f) * s, Random.Range(0.06f, 0.18f) * s,
+                Spawn(at + Random.insideUnitSphere * 0.15f * s, dir * Random.Range(2.5f, 7f) * s, Random.Range(0.28f, 0.52f) * s, Random.Range(0.06f, 0.18f) * s,
                     Random.Range(0.5f, 1f), fire, -2.5f, 2.2f, 0.4f, false);
             }
 
             var smoke = RampFor(new Color(0.34f, 0.32f, 0.3f), new Color(0.12f, 0.12f, 0.12f), true);
-            for (int i = 0; i < 34; i++)
+            for (int i = 0; i < 20; i++)
             {
                 var dir = (Random.onUnitSphere * 0.6f + Vector3.up).normalized;
-                Spawn(at + Random.insideUnitSphere * 0.3f * s, dir * Random.Range(1.2f, 4f) * s, Random.Range(0.1f, 0.16f) * s, Random.Range(0.22f, 0.36f) * s,
+                Spawn(at + Random.insideUnitSphere * 0.3f * s, dir * Random.Range(1.2f, 4f) * s, Random.Range(0.12f, 0.18f) * s, Random.Range(0.26f, 0.42f) * s,
                     Random.Range(1.6f, 3f), smoke, -1.4f, 1.2f, 0.5f, false);
             }
 
             var sparks = RampFor(new Color(1f, 0.95f, 0.6f), new Color(1f, 0.35f, 0.05f), true);
-            for (int i = 0; i < 40; i++)
+            for (int i = 0; i < 24; i++)
             {
                 var dir = (Random.onUnitSphere + Vector3.up * 0.6f).normalized;
                 Spawn(at, dir * Random.Range(8f, 17f) * s, Random.Range(0.035f, 0.07f), 0.02f, Random.Range(0.5f, 1.2f), sparks, 16f, 0.4f, 0.3f, true);
             }
 
             var debris = RampFor(new Color(0.42f, 0.38f, 0.33f), new Color(0.3f, 0.27f, 0.24f), false);
-            for (int i = 0; i < 24; i++)
+            for (int i = 0; i < 14; i++)
             {
                 var dir = (Random.onUnitSphere + Vector3.up * 1.2f).normalized;
                 float edge = Random.Range(0.06f, 0.17f);
@@ -191,11 +221,11 @@ namespace FruktSharedLibrary.Combat
             if (onGround)
             {
                 var dust = RampFor(new Color(0.55f, 0.5f, 0.42f), new Color(0.3f, 0.28f, 0.26f), false);
-                for (int i = 0; i < 28; i++)
+                for (int i = 0; i < 16; i++)
                 {
-                    float angle = i / 28f * Mathf.PI * 2f + Random.Range(-0.1f, 0.1f);
+                    float angle = i / 16f * Mathf.PI * 2f + Random.Range(-0.15f, 0.15f);
                     var dir = new Vector3(Mathf.Cos(angle), 0.05f, Mathf.Sin(angle));
-                    Spawn(ground.point + Vector3.up * 0.1f, dir * Random.Range(5f, 9f) * s, 0.25f * s, Random.Range(0.5f, 0.8f) * s, Random.Range(0.6f, 0.9f), dust, -0.5f, 3.5f, 0.5f, false);
+                    Spawn(ground.point + Vector3.up * 0.1f, dir * Random.Range(5f, 9f) * s, 0.3f * s, Random.Range(0.6f, 0.95f) * s, Random.Range(0.6f, 0.9f), dust, -0.5f, 3.5f, 0.5f, false);
                 }
             }
 
@@ -216,11 +246,8 @@ namespace FruktSharedLibrary.Combat
         {
             if (Live.Count >= MaxParticles)
                 return null;
-            Particle p = null;
-            while (Spare.Count > 0 && (p == null || !p.Object.Exists()))
-                p = Spare.Pop();
-            if (p == null || !p.Object.Exists())
-                p = Create();
+            _warm = true;
+            var p = Spare.Count > 0 ? Spare.Pop() : Create();
             p.Object.SetActive(true);
             p.Transform.position = position;
             p.Transform.rotation = Random.rotation;
@@ -250,6 +277,7 @@ namespace FruktSharedLibrary.Combat
                 Object.Destroy(primitive);
             }
             var go = new GameObject("FSL particle");
+            Object.DontDestroyOnLoad(go);
             go.AddComponent<MeshFilter>().sharedMesh = _cube;
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -296,51 +324,82 @@ namespace FruktSharedLibrary.Combat
 
         internal static void Update()
         {
+            if (_warm && Spare.Count + Live.Count < WarmPool)
+            {
+                for (int i = 0; i < WarmPerFrame; i++)
+                {
+                    var spare = Create();
+                    spare.Object.SetActive(false);
+                    Spare.Push(spare);
+                }
+            }
             if (Live.Count == 0 && Lights.Count == 0)
                 return;
-            float dt = Time.deltaTime;
+            float dt = Time.deltaTime, now = Time.time;
             for (int i = Live.Count - 1; i >= 0; i--)
             {
                 var p = Live[i];
-                float t = (Time.time - p.Born) / p.Life;
-                if (!p.Object.Exists() || t >= 1f)
+                float t = (now - p.Born) / p.Life;
+                if (t >= 1f)
                 {
                     Retire(i);
                     continue;
                 }
-                if (!p.Resting)
+                try
                 {
-                    var from = p.Transform.position;
-                    p.Velocity += Vector3.down * p.Gravity * dt;
-                    p.Velocity *= Mathf.Max(0f, 1f - p.Drag * dt);
-                    var to = from + p.Velocity * dt;
-                    if (p.Bounce && Physics.Linecast(from, to, out var hit, Layers.Gameplay, QueryTriggerInteraction.Ignore))
-                    {
-                        to = hit.point + hit.normal * 0.02f;
-                        p.Velocity = Vector3.Reflect(p.Velocity, hit.normal) * 0.35f;
-                        if (p.Velocity.sqrMagnitude < 1f)
-                        {
-                            p.Velocity = Vector3.zero;
-                            p.Resting = true;
-                        }
-                    }
-                    p.Transform.position = to;
+                    Move(p, t, dt);
                 }
-                Apply(p, t);
+                catch
+                {
+                    // Something took the cube away (a map change); forget it.
+                    Live.RemoveAt(i);
+                }
             }
 
             for (int i = Lights.Count - 1; i >= 0; i--)
             {
                 var (light, born, life, intensity) = Lights[i];
-                float t = (Time.time - born) / life;
-                if (!light.Exists() || t >= 1f)
+                float t = (now - born) / life;
+                if (t >= 1f || !light.Exists())
                 {
-                    if (light.Exists())
-                        Object.Destroy(light.gameObject);
-                    Lights.RemoveAt(i);
+                    RetireLight(i);
                     continue;
                 }
                 light.intensity = intensity * (1f - t) * (1f - t);
+            }
+        }
+
+        private static void Move(Particle p, float t, float dt)
+        {
+            if (!p.Resting)
+            {
+                var from = p.Transform.position;
+                p.Velocity += Vector3.down * p.Gravity * dt;
+                p.Velocity *= Mathf.Max(0f, 1f - p.Drag * dt);
+                var to = from + p.Velocity * dt;
+                if (p.Bounce && Physics.Linecast(from, to, out var hit, Layers.Gameplay, QueryTriggerInteraction.Ignore))
+                {
+                    to = hit.point + hit.normal * 0.02f;
+                    p.Velocity = Vector3.Reflect(p.Velocity, hit.normal) * 0.35f;
+                    if (p.Velocity.sqrMagnitude < 1f)
+                    {
+                        p.Velocity = Vector3.zero;
+                        p.Resting = true;
+                    }
+                }
+                p.Transform.position = to;
+            }
+            Apply(p, t);
+        }
+
+        private static void RetireLight(int index)
+        {
+            var light = Lights[index].Light;
+            Lights.RemoveAt(index);
+            if (light.Exists())
+            {
+                light.gameObject.SetActive(false);
+                SpareLights.Push(light);
             }
         }
 
@@ -348,10 +407,14 @@ namespace FruktSharedLibrary.Combat
         {
             var p = Live[index];
             Live.RemoveAt(index);
-            if (p.Object.Exists())
+            try
             {
                 p.Object.SetActive(false);
                 Spare.Push(p);
+            }
+            catch
+            {
+                // Already gone.
             }
         }
 
@@ -376,6 +439,13 @@ namespace FruktSharedLibrary.Combat
                     Object.Destroy(light.gameObject);
             }
             Lights.Clear();
+            foreach (var light in SpareLights)
+            {
+                if (light.Exists())
+                    Object.Destroy(light.gameObject);
+            }
+            SpareLights.Clear();
+            _warm = false;
         }
     }
 }
