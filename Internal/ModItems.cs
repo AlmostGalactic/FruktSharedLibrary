@@ -114,6 +114,9 @@ namespace FruktSharedLibrary.Internal
             {
                 FruktLog.Debug($"Reading the game's item registrations failed: {e.Message}");
             }
+            // Mods' own categories, after the game's, so a mod's "Weapons" is the game's.
+            foreach (var category in ModCategories.All)
+                Add(ModCategories.DataFor(category));
             return result;
         }
 
@@ -131,7 +134,8 @@ namespace FruktSharedLibrary.Internal
                 {
                     string fallback = categories.ContainsKey("Etc") ? "Etc" : new List<string>(categories.Keys)[0];
                     FruktLog.Warning($"'{tool.Name}' asks for the inventory category '{tool.Category}', which doesn't exist " +
-                                     $"(there's {string.Join(", ", categories.Keys)}). It's under {fallback} instead.");
+                                     $"(there's {string.Join(", ", categories.Keys)}). It's under {fallback} instead. " +
+                                     "Inventory.AddCategory makes a new one.");
                     category = categories[fallback];
                 }
                 string categoryName = Inventory.CategoryName(category);

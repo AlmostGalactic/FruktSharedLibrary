@@ -14,7 +14,7 @@ one place instead of in every mod. An in-game self-test checks all of it against
 - Creatures: spawn, find, heal, kill and push them around, walk them somewhere, detach limbs, read blood and pain
 - Damage that works like the game's own weapons, explosions, and flesh that grows back or gets eaten away
 - Spawning guns, props and anything else the game has registered, and your own 3D models from OBJ files
-- The inventory and the toolbar: read and fill the slots, and add your own tools, guns and props to the terminal
+- The inventory and the toolbar: read and fill the slots, and add your own tools, guns, props and categories to the terminal
 - Bullets for your own guns: the game's own bullets, instant shots that go through things, spread, and tracers
 - Effects for them: cube explosions, muzzle flashes, fire, smoke, sparks and debris
 - Joints (welds, hinges, ropes, springs and more), and events for when objects collide, get grabbed or get shot

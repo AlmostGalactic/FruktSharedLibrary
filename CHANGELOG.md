@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.8
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Inventory.AddCategory` adds your own tab to the terminal, with an icon, after the game's own. File tools, guns and
+  props under it by name; `WithCategory` moves any mod item, props included, into another category. Mods that add
+  the same category share it.
+- The terminal makes room for as many tabs as there are. Tabs that don't fit in one column go into more columns, and
+  the panel widens to fit them. A category's name shrinks to fit the header.
+- A category can hold more than 24 items. The game's grid stopped at 24; now it scrolls through all of them.
+
 ## 0.3.7
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build

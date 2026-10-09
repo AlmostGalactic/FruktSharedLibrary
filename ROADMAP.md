@@ -100,6 +100,10 @@ Release steps:
 
 - [x] `Tissue.Dissolve` from a point, with an uneven edge.
 
+## 0.3.8: released
+
+- [x] `Inventory.AddCategory`, your own tabs in the terminal, which wrap into more columns when there are many.
+
 ## Ideas for later
 
 Nothing here is promised:

@@ -63,6 +63,7 @@ namespace FruktSharedLibrary.Internal
             AddTestTool();
             AddTestProp();
             AddTestGun();
+            AddTestCategories();
             LogUiSounds();
             GameEvents.MainMenuEntered += OnMainMenu;
             GameEvents.SandboxReady += OnSandboxReady;
@@ -693,6 +694,23 @@ namespace FruktSharedLibrary.Internal
                 if (!more)
                     break;
                 yield return inventoryTest.Current;
+            }
+            var categoriesTest = TestCategories();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = categoriesTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Categories test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return categoriesTest.Current;
             }
             Section("UI", () =>
             {

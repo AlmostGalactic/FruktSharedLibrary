@@ -11,7 +11,7 @@ you the mouse buttons while the player holds them, and props, which the player p
 | Member | Description |
 |--------|-------------|
 | `Inventory.Items` | Every item, in the order the game registered them. |
-| `Inventory.Categories` | The terminal's categories, in the order its tabs show them once a map has loaded. |
+| `Inventory.Categories` | The terminal's categories, in the order its tabs show them once a map has loaded. Mods' own come after the game's. |
 | `Inventory.Find(nameOrId)` | An item by its name ("Viper-17") or ID, ignoring case. Null if there's none. |
 | `Inventory.ItemsIn(category)` | The items in one category, by ID or name. |
 | `Inventory.TerminalOpen`, `OpenTerminal()`, `CloseTerminal()` | The terminal (the inventory screen). Needs a map. |
@@ -61,11 +61,12 @@ Inventory.AddTool("Boom Stick", "Weapons")
     });
 ```
 
-The category is one of the terminal's tabs: "Weapons", "Tools", "Props" or "Etc". If it doesn't exist, the item
-goes under Etc and the log says so.
+The category is one of the terminal's tabs: "Weapons", "Tools", "Props", "Etc", or [your own](#your-own-categories).
+If it doesn't exist, the item goes under Etc and the log says so.
 
 | Setup | Description |
 |-------|-------------|
+| `WithCategory(name)` | Files it under another category, such as [your own](#your-own-categories). Props use it to leave Props. Call it before the first map loads. |
 | `WithDescription(text)` | The text on its card. |
 | `WithCard(key, value)` | A row on its card, like ("range", "40 m"). |
 | `WithIcon(sprite)` | Its icon in the terminal and on the toolbar. Without one it gets a picture of its model (see below), or a plain square if it has no model. Can be changed at any time. |
@@ -98,6 +99,29 @@ old one.
 `IsHeld` and `HeldObject` tell you whether the player is holding it and give you the copy in their hand.
 `Registered` turns true once it's in the inventory and `Item` is then its `InventoryItem`, so you can put it on
 the toolbar yourself. `Failed` means it couldn't be added; the log says why.
+
+## Your own categories
+
+`Inventory.AddCategory(name, icon)` adds a tab to the terminal, after the game's own. File items under it by name.
+Call it from `OnInitializeMelon`, like the items; it's in the terminal from the first map on.
+
+```csharp
+Inventory.AddCategory("Explosives", bundle.Load<Sprite>("ExplosivesIcon"));
+Inventory.AddTool("Boom Stick", "Explosives");
+Inventory.AddProp("Barrel", bundle, "Barrel").WithCategory("Explosives");
+```
+
+- Props go under Props unless you call `WithCategory` on them, as above. Tools and guns take the category when you
+  add them, or with `WithCategory` too.
+- Without an icon, the tab shows the icon of its first item, or the Etc icon while it's empty. `WithIcon(sprite)`
+  changes it at any time.
+- Mods that add a category with the same name share one tab. Adding one the game already has, like "Weapons", gives
+  you the game's.
+- The terminal has room for seven tabs in a column. With more, they go into more columns, filled top to bottom, and
+  the panel widens to fit them. Names too long for the header are made smaller.
+- A category can hold any number of items. The grid scrolls, as it does for the game's own.
+
+The returned `ModCategory` has its `Name`, `Icon`, `Items`, and `Added`, which turns true once it's in the terminal.
 
 ## Your own guns
 

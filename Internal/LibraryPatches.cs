@@ -14,6 +14,8 @@ using Il2CppMap.Spinner;
 using Il2CppPlayer.GameplayInput.ButtonsActions.MouseKeyboard;
 using Il2CppSpawnables.ContextMenus;
 using Il2CppSpawnables.Weapons;
+using Il2CppData.Icons;
+using Il2CppViews.Terminal;
 
 namespace FruktSharedLibrary.Internal
 {
@@ -52,6 +54,10 @@ namespace FruktSharedLibrary.Internal
             Patch(typeof(DeleteCreatureContextMenuAction), nameof(DeleteCreatureContextMenuAction.ExecuteLogic), Type.EmptyTypes, prefix: nameof(CarrierExecute));
             // Every menu click; lets drop-down groups and toggles act without closing the menu.
             Patch(typeof(Il2CppPlayer.ContextMenu.Actions.ContextMenuAction), nameof(Il2CppPlayer.ContextMenu.Actions.ContextMenuAction.Execute), Type.EmptyTypes, prefix: nameof(MenuActionExecute));
+
+            // Mods' terminal categories and items: more tab squares and item tiles than the game's prefab has.
+            Patch(typeof(TerminalItemsPlateView), nameof(TerminalItemsPlateView.DrawCategories), null, prefix: nameof(TerminalCategories));
+            Patch(typeof(TerminalItemsPlateView), nameof(TerminalItemsPlateView.DrawItems), null, prefix: nameof(TerminalItems));
 
             // Esc belongs to the mod menu while it is open (the pause button ignores the input block).
             Patch(typeof(PauseToggleButton), "OnPressInternal", Type.EmptyTypes, prefix: nameof(PauseButtonPressed));
@@ -163,6 +169,21 @@ namespace FruktSharedLibrary.Internal
                 return true;
             }
         }
+
+        private static void TerminalCategories(TerminalItemsPlateView __instance, Il2CppSystem.Collections.Generic.IReadOnlyList<IIconData> icons)
+        {
+            if (Expect<TerminalItemsPlateView>(__instance, nameof(TerminalCategories)))
+                Guard(() => ModCategories.FitCategories(__instance, CountOf(icons)));
+        }
+
+        private static void TerminalItems(TerminalItemsPlateView __instance, Il2CppSystem.Collections.Generic.IReadOnlyList<IIconData> icons)
+        {
+            if (Expect<TerminalItemsPlateView>(__instance, nameof(TerminalItems)))
+                Guard(() => ModCategories.FitItems(__instance, CountOf(icons)));
+        }
+
+        private static int CountOf(Il2CppSystem.Collections.Generic.IReadOnlyList<IIconData> icons)
+            => icons == null ? 0 : Interop.Il2CppExtensions.ToManagedList(icons.Cast<Il2CppSystem.Collections.Generic.IEnumerable<IIconData>>()).Count;
 
         private static bool PauseButtonPressed(PauseToggleButton __instance)
             => !Expect<PauseToggleButton>(__instance, nameof(PauseButtonPressed)) || !UI.ModMenu.OwnsEscape;

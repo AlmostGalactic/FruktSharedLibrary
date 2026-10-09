@@ -184,6 +184,7 @@ namespace FruktSharedLibrary.Gameplay
             get
             {
                 var result = new List<string>();
+                Internal.ModCategories.AddToLayout();
                 try
                 {
                     var terminal = GameServices.TryGet<ITerminalItemsService>();
@@ -221,8 +222,21 @@ namespace FruktSharedLibrary.Gameplay
                                 || string.Equals(i.CategoryName, category, StringComparison.OrdinalIgnoreCase)).ToList();
 
         /// <summary>
+        /// Adds your own category to the terminal: a tab after the game's own, with <paramref name="icon"/> on it.
+        /// File items under it by passing its name to <see cref="AddTool"/> or <see cref="AddGun"/>, or with
+        /// <see cref="ModTool.WithCategory"/> (props too). Without an icon the tab shows the first item's icon. Mods that add a category with the
+        /// same name share it. Call it from <c>OnInitializeMelon</c>; it's in the terminal from the first map on.
+        /// </summary>
+        public static ModCategory AddCategory(string name, Sprite icon = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("A category needs a name.", nameof(name));
+            return Internal.ModCategories.Add(name.Trim(), icon);
+        }
+
+        /// <summary>
         /// Adds your own item to the inventory. It shows up in the terminal under <paramref name="category"/>
-        /// ("Weapons", "Tools", "Props" or "Etc"), the player puts it on the toolbar like any other item, and while
+        /// ("Weapons", "Tools", "Props", "Etc" or one from <see cref="AddCategory"/>), the player puts it on the toolbar like any other item, and while
         /// they hold it you get the mouse buttons through the returned <see cref="ModTool"/>. Call it from
         /// <c>OnInitializeMelon</c>; the tool is added to the game's inventory as soon as the game has set its own
         /// up.

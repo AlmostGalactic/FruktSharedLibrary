@@ -34,8 +34,11 @@ namespace FruktSharedLibrary.Gameplay
         /// <summary>The name in the terminal and above the toolbar.</summary>
         public string Name { get; }
 
-        /// <summary>The terminal category it's filed under: "Weapons", "Tools", "Props" or "Etc".</summary>
-        public string Category { get; }
+        /// <summary>
+        /// The terminal category it's filed under: "Weapons", "Tools", "Props", "Etc" or one from
+        /// <see cref="Inventory.AddCategory"/>.
+        /// </summary>
+        public string Category { get; private set; }
 
         /// <summary>The text on its card in the terminal.</summary>
         public string Description { get; private set; } = "";
@@ -79,6 +82,21 @@ namespace FruktSharedLibrary.Gameplay
         public GameObject HeldObject => IsHeld ? Internal.ModItems.HeldObject : null;
 
         // ------------------------------------------------------------ setup
+
+        /// <summary>
+        /// Files it under another terminal category, such as one from <see cref="Inventory.AddCategory"/>. This is
+        /// how props get out of Props. Call it before the first map loads; after that it stays where it is.
+        /// </summary>
+        public ModTool WithCategory(string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                return this;
+            if (Registered)
+                FruktLog.Warning($"'{Name}' is already in the terminal under {Category}, so it stays there.");
+            else
+                Category = category.Trim();
+            return this;
+        }
 
         /// <summary>Sets the text on its card in the terminal.</summary>
         public ModTool WithDescription(string description)
