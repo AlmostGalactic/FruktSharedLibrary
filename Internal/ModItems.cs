@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using FruktSharedLibrary.Core;
 using FruktSharedLibrary.Gameplay;
@@ -29,6 +30,7 @@ namespace FruktSharedLibrary.Internal
         private static readonly Dictionary<ModTool, SerializedItemDescriptor> Cards = new();
         private static readonly Dictionary<ModTool, GameObject> Templates = new();
         private static readonly Dictionary<ModTool, Sprite> AutoIcons = new();
+        private static readonly Dictionary<ModTool, SerializedGIIRegistrationData> Originals = new();
         private static readonly HashSet<ModTool> IconsToDraw = new();
         private static GameObject _templates;
         private static bool _injected, _injectionFailed;
@@ -125,7 +127,19 @@ namespace FruktSharedLibrary.Internal
         {
             try
             {
-                if (!EnsureInjected())
+                SerializedGIIRegistrationData original = null;
+                if (tool.CopyOf != null)
+                {
+                    original = FindOriginal(registry, tool.CopyOf);
+                    if (original == null)
+                    {
+                        tool.Failed = true;
+                        return;
+                    }
+                    Originals[tool] = original;
+                    tool.Category ??= Inventory.CategoryName(original.m_category);
+                }
+                else if (!EnsureInjected())
                 {
                     tool.Failed = true;
                     return;
@@ -151,7 +165,7 @@ namespace FruktSharedLibrary.Internal
                 registration.hideFlags = HideFlags.HideAndDontSave;
                 registration.m_objectDescriptor = card;
                 registration.m_category = category;
-                registration.m_prefab = template.GetComponent<ModToolBehaviour>();
+                registration.m_prefab = original != null ? template.GetComponent<GodInventoryItem>() : template.GetComponent<ModToolBehaviour>();
 
                 var data = group.RegisterGIIPrefab(registration);
                 if (data == null)
@@ -162,13 +176,50 @@ namespace FruktSharedLibrary.Internal
                 }
                 Cards[tool] = card;
                 tool.Item = Inventory.Wrap(data);
-                FruktLog.Msg($"Added '{tool.Name}' to the inventory under {categoryName}.");
+                FruktLog.Msg(original != null ? $"Added '{tool.Name}', a copy of '{original.ObjectName}', to the inventory under {categoryName}."
+                    : $"Added '{tool.Name}' to the inventory under {categoryName}.");
             }
             catch (Exception e)
             {
                 tool.Failed = true;
                 FruktLog.Error($"Adding '{tool.Name}' to the inventory failed", e);
             }
+        }
+
+        // The game's own registration of an item, found by its terminal name (or its asset's name).
+        private static SerializedGIIRegistrationData FindOriginal(NativeGodInventoryItemsRegistration registry, string of)
+        {
+            static string Plain(string text) => new string((text ?? "").Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+            var all = new List<SerializedGIIRegistrationData>();
+            foreach (var group in new Il2CppSystem.Object[] { registry.m_weapons, registry.m_tools })
+            {
+                if (group == null)
+                    continue;
+                foreach (var property in group.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (property.PropertyType == typeof(SerializedGIIRegistrationData) && property.GetIndexParameters().Length == 0)
+                        all.Add(property.GetValue(group) as SerializedGIIRegistrationData);
+                }
+            }
+            var props = registry.m_props?.m_props;
+            if (props != null)
+            {
+                foreach (var registration in props)
+                    all.Add(registration);
+            }
+            string wanted = Plain(of);
+            foreach (var registration in all)
+            {
+                if (!registration.Exists() || !registration.m_prefab.Exists())
+                    continue;
+                string prefab = Plain(registration.m_prefab.gameObject.name);
+                if (Plain(registration.ObjectName) == wanted || Plain(registration.name) == wanted || prefab == wanted
+                    || (prefab.EndsWith("gii") && prefab.Substring(0, prefab.Length - 3) == wanted))
+                    return registration;
+            }
+            FruktLog.Warning($"There's no game item called '{of}' to copy. The game's items are: " +
+                             string.Join(", ", all.Where(r => r.Exists()).Select(r => r.ObjectName)) + ".");
+            return null;
         }
 
         private static GameObject BuildTemplate(ModTool tool)
@@ -181,10 +232,20 @@ namespace FruktSharedLibrary.Internal
                 Object.DontDestroyOnLoad(_templates);
             }
             string name = "FSLTool" + Tools.IndexOf(tool);
-            var template = new GameObject(name);
-            template.transform.SetParent(_templates.transform, false);
-            ModToolBehaviour.Prepare(template.AddComponent<ModToolBehaviour>());
-            PutModel(template, tool);
+            GameObject template;
+            if (Originals.TryGetValue(tool, out var original))
+            {
+                // A copy of the game's own item: its prefab under another name, so the toolbar's copies can be told apart.
+                template = Object.Instantiate(original.m_prefab.gameObject, _templates.transform, false);
+                template.name = name;
+            }
+            else
+            {
+                template = new GameObject(name);
+                template.transform.SetParent(_templates.transform, false);
+                ModToolBehaviour.Prepare(template.AddComponent<ModToolBehaviour>());
+                PutModel(template, tool);
+            }
             ByTemplate[name] = tool;
             Templates[tool] = template;
             return template;
@@ -193,6 +254,8 @@ namespace FruktSharedLibrary.Internal
         // The model is the only child of a tool's object, in the template and in the copies the toolbar makes.
         private static void PutModel(GameObject root, ModTool tool)
         {
+            if (tool.CopyOf != null)
+                return;
             for (int i = root.transform.childCount - 1; i >= 0; i--)
                 Object.DestroyImmediate(root.transform.GetChild(i).gameObject);
             if (!tool.Model.Exists())
@@ -244,6 +307,8 @@ namespace FruktSharedLibrary.Internal
         {
             if (tool.Icon.Exists())
                 return tool.Icon;
+            if (Originals.TryGetValue(tool, out var original) && original.Icon.Exists())
+                return original.Icon;
             if (!AutoIcons.TryGetValue(tool, out var auto) || (auto != null && !auto.Exists()))
             {
                 // The main menu's screen effects paint over every camera, so pictures are only taken in a map,
@@ -290,16 +355,25 @@ namespace FruktSharedLibrary.Internal
             icon.m_offset = Vector2.zero;
             icon.m_scale = Vector2.one;
             icon.m_color = Color.white;
+            Originals.TryGetValue(tool, out var original);
+            if (original != null && !tool.Icon.Exists())
+            {
+                icon.m_offset = original.IconOffset;
+                icon.m_scale = original.IconScale;
+                icon.m_color = original.IconColor;
+            }
 
             var card = ScriptableObject.CreateInstance<SerializedItemDescriptor>();
             card.name = tool.Name + " card";
             card.hideFlags = HideFlags.HideAndDontSave;
             card.m_objectName = tool.Name;
-            card.m_description = tool.Description ?? "";
+            card.m_description = string.IsNullOrEmpty(tool.Description) && original != null ? original.Description ?? "" : tool.Description ?? "";
             card.m_iconData = icon;
             var rows = new Il2CppSystem.Collections.Generic.List<ItemCardRow>();
             foreach (var row in tool.CardRows)
                 rows.Add(new ItemCardRow(row.Key, row.Value));
+            if (rows.Count == 0 && original?.m_objectDescriptor?.m_freeRows != null)
+                rows = original.m_objectDescriptor.m_freeRows;
             card.m_freeRows = rows;
             return card;
         }
@@ -425,7 +499,9 @@ namespace FruktSharedLibrary.Internal
         private static void FollowHeld()
         {
             var held = GameState.InSandbox ? Toolbar.HeldObject : null;
-            var tool = held != null && held.GetComponent<ModToolBehaviour>() != null ? ToolOf(held) : null;
+            var tool = held != null ? ToolOf(held) : null;
+            if (tool != null && tool.CopyOf == null && held.GetComponent<ModToolBehaviour>() == null)
+                tool = null;
             if (tool != HeldTool || (tool != null && held != HeldObject))
             {
                 var previous = HeldTool;

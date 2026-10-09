@@ -61,6 +61,7 @@ namespace FruktSharedLibrary.Internal
             FruktLog.ForceDebug = true;
             FruktLog.Msg("[SelfTest] Enabled. The test map loads automatically from the main menu.");
             AddTestTool();
+            AddTestCopy();
             AddTestProp();
             AddTestGun();
             AddTestCategories();
@@ -711,6 +712,23 @@ namespace FruktSharedLibrary.Internal
                 if (!more)
                     break;
                 yield return categoriesTest.Current;
+            }
+            var copiesTest = TestCopies();
+            while (true)
+            {
+                bool more;
+                try
+                {
+                    more = copiesTest.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    Check("Copies test ran without exceptions", false, e.ToString());
+                    break;
+                }
+                if (!more)
+                    break;
+                yield return copiesTest.Current;
             }
             Section("UI", () =>
             {

@@ -38,7 +38,7 @@ namespace FruktSharedLibrary.Gameplay
         /// The terminal category it's filed under: "Weapons", "Tools", "Props", "Etc" or one from
         /// <see cref="Inventory.AddCategory"/>.
         /// </summary>
-        public string Category { get; private set; }
+        public string Category { get; internal set; }
 
         /// <summary>The text on its card in the terminal.</summary>
         public string Description { get; private set; } = "";
@@ -80,6 +80,12 @@ namespace FruktSharedLibrary.Gameplay
 
         /// <summary>The copy in the player's hand while they hold it, otherwise null.</summary>
         public GameObject HeldObject => IsHeld ? Internal.ModItems.HeldObject : null;
+
+        /// <summary>
+        /// The game item this is a copy of, for one made with <see cref="Inventory.AddCopy"/>; null for a mod's own
+        /// tool.
+        /// </summary>
+        public string CopyOf { get; internal set; }
 
         // ------------------------------------------------------------ setup
 

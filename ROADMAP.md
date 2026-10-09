@@ -89,6 +89,11 @@ Release steps:
 - [x] A full self-test run on the release build.
 - [x] Upload the DLL and XML docs to the GitHub release.
 
+## 0.4.1: released
+
+- [x] **Copies of the game's items.** `Inventory.AddCopy` adds a renamed copy of a game item, like the Human Spawner,
+  that works like the original and that a mod can tell apart.
+
 ## Ideas for later
 
 Nothing here is promised:

@@ -249,6 +249,24 @@ namespace FruktSharedLibrary.Gameplay
         }
 
         /// <summary>
+        /// Adds a copy of one of the game's own items, such as "Human" (the Human Spawner), under a new name. The copy works
+        /// just like the original, with the original's icon, card and category unless you give it others. While
+        /// the player holds it, <see cref="ModTool.IsHeld"/> is true and Selected, Deselected and WhileHeld fire;
+        /// the mouse buttons stay the game's. Call it from <c>OnInitializeMelon</c>, like <see cref="AddTool"/>.
+        /// </summary>
+        /// <param name="name">The copy's name in the terminal.</param>
+        /// <param name="of">The game item's name in the terminal.</param>
+        /// <param name="category">Where it's filed; the original's category if left out.</param>
+        public static ModTool AddCopy(string name, string of, string category = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("A copy needs a name.", nameof(name));
+            if (string.IsNullOrWhiteSpace(of))
+                throw new ArgumentException("Say which game item to copy.", nameof(of));
+            return Internal.ModItems.Add(new ModTool(name, string.IsNullOrWhiteSpace(category) ? null : category.Trim()) { CopyOf = of.Trim() });
+        }
+
+        /// <summary>
         /// Adds your own gun to the inventory, under <paramref name="category"/> (Weapons unless you say otherwise).
         /// It's a tool that fires on left click at the rate you set; handle <see cref="ModGun.Fired"/> to make each
         /// shot do something. Call it from <c>OnInitializeMelon</c>, like <see cref="AddTool"/>.

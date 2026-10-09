@@ -124,6 +124,21 @@ Inventory.AddProp("Barrel", bundle, "Barrel").WithCategory("Explosives");
 
 The returned `ModCategory` has its `Name`, `Icon`, `Items`, and `Added`, which turns true once it's in the terminal.
 
+## Copies of the game's items
+
+`Inventory.AddCopy(name, of, category)` adds a second copy of one of the game's own items under a new name. The copy
+works exactly like the original (the game runs it), with the original's icon, card and category unless you give it
+others.
+
+```csharp
+var spawner = Inventory.AddCopy("Night Shift Spawner", "Human")
+    .WithDescription("Spawns people for the night shift.");
+```
+
+`of` is the item's name in the terminal (the Human Spawner is called "Human" there). While the player holds the
+copy, its `IsHeld` is true and `Selected`, `Deselected` and `WhileHeld` fire, so you can tell what was made with it.
+The mouse buttons stay the game's, and `WithModel` doesn't apply. If there's no game item by that name, the log lists the ones there are.
+
 ## Your own guns
 
 `Inventory.AddGun(name)` adds a gun under Weapons. It's a tool that fires on left click, or for as long as the

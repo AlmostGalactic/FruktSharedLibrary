@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- `Inventory.AddCopy` adds a copy of one of the game's own items (like the Human Spawner) under a new name. It works
+  just like the original, and the mod can tell when the player is holding it.
+
 ## 0.4.0
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build
