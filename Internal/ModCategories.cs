@@ -165,7 +165,8 @@ namespace FruktSharedLibrary.Internal
                         && string.Equals(i.CategoryName, category.Name, StringComparison.OrdinalIgnoreCase));
                     if (first != null)
                     {
-                        Set(icon, first.Icon, Vector2.zero, Vector2.one, Color.white);
+                        var (offset, scale) = FitToBox(first.Icon);
+                        Set(icon, first.Icon, offset, scale, Color.white);
                         continue;
                     }
                     etc ??= EtcIcon();
@@ -185,6 +186,84 @@ namespace FruktSharedLibrary.Internal
             icon.m_offset = offset;
             icon.m_scale = scale;
             icon.m_color = color;
+        }
+
+        // The icon's box on a tab, in the terminal's units. Read from the terminal once it's drawn.
+        private static float _iconBox = 40f;
+        // The game draws its own tab icons at nine tenths of the box.
+        private const float IconFill = 0.9f;
+        // By the sprite's native object and name: GetInstanceID gives every sprite the same number through the
+        // interop.
+        private static readonly Dictionary<(IntPtr, string), Rect> Content = new();
+
+        /// <summary>
+        /// The offset and scale that make the visible part of an item's picture fill a tab's icon box, centred.
+        /// Item pictures have empty space around them that the game's tab icons don't.
+        /// </summary>
+        internal static (Vector2 Offset, Vector2 Scale) FitToBox(Sprite sprite)
+        {
+            var content = ContentOf(sprite);
+            float largest = Mathf.Max(content.width, content.height);
+            if (largest <= 0.01f)
+                return (Vector2.zero, Vector2.one);
+            float scale = Mathf.Min(IconFill / largest, 6f);
+            var off = (content.center - new Vector2(0.5f, 0.5f)) * _iconBox * scale;
+            return (-off, new Vector2(scale, scale));
+        }
+
+        /// <summary>
+        /// The part of a sprite that isn't see-through, as fractions of the sprite (0 to 1). Pictures that can't
+        /// be read (most from bundles, and the game's own) count as filled.
+        /// </summary>
+        internal static Rect ContentOf(Sprite sprite)
+        {
+            var whole = new Rect(0f, 0f, 1f, 1f);
+            if (sprite == null || sprite.texture == null)
+                return whole;
+            if (Content.TryGetValue((sprite.Pointer, sprite.name), out var known))
+                return known;
+            var result = whole;
+            try
+            {
+                var texture = sprite.texture;
+                if (!texture.isReadable)
+                    return Remember(sprite, whole);
+                // The whole picture as the terminal draws it. A sprite's textureRect can be cropped to its visible
+                // part, unless it's packed in an atlas.
+                var area = sprite.packed ? sprite.textureRect : sprite.rect;
+                int x0 = Mathf.FloorToInt(area.x), y0 = Mathf.FloorToInt(area.y);
+                int width = Mathf.Max(1, Mathf.RoundToInt(area.width)), height = Mathf.Max(1, Mathf.RoundToInt(area.height));
+                // GetPixel one at a time: the whole-array reads (GetPixels32) corrupt memory through the interop.
+                // Every pixel of a small picture, a grid of about 64 x 64 of a big one.
+                int step = Math.Max(1, Math.Max(width, height) / 64);
+                int minX = int.MaxValue, minY = int.MaxValue, maxX = -1, maxY = -1;
+                for (int y = 0; y < height; y += step)
+                {
+                    for (int x = 0; x < width; x += step)
+                    {
+                        if (texture.GetPixel(x0 + x, y0 + y).a < 0.16f)
+                            continue;
+                        minX = Math.Min(minX, x);
+                        maxX = Math.Max(maxX, x + step);
+                        minY = Math.Min(minY, y);
+                        maxY = Math.Max(maxY, y + step);
+                    }
+                }
+                if (maxX >= 0)
+                    result = Rect.MinMaxRect(minX / (float)width, minY / (float)height,
+                        Math.Min(maxX, width) / (float)width, Math.Min(maxY, height) / (float)height);
+            }
+            catch (Exception e)
+            {
+                FruktLog.Debug($"Measuring the icon '{sprite.name}' failed: {e.Message}");
+            }
+            return Remember(sprite, result);
+        }
+
+        private static Rect Remember(Sprite sprite, Rect content)
+        {
+            Content[(sprite.Pointer, sprite.name)] = content;
+            return content;
         }
 
         private static SerializedIconData EtcIcon()
@@ -220,10 +299,13 @@ namespace FruktSharedLibrary.Internal
             if (state == null)
                 return;
             AddToLayout();
-            RefreshIcons();
             var squares = plate.m_categorySquares;
             if (squares == null || squares.Length == 0)
                 return;
+            var box = squares[0].m_iconDrawer?.m_iconOffsetPivot;
+            if (box != null && box.rect.width > 1f)
+                _iconBox = box.rect.width;
+            RefreshIcons();
             if (count > squares.Length)
             {
                 var list = new List<TerminalCategorySquareView>();

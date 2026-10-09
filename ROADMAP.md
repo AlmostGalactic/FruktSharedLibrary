@@ -104,6 +104,10 @@ Release steps:
 
 - [x] `Inventory.AddCategory`, your own tabs in the terminal, which wrap into more columns when there are many.
 
+## 0.3.9: released
+
+- [x] Automatic tab icons scaled to fit.
+
 ## Ideas for later
 
 Nothing here is promised:

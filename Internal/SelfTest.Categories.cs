@@ -20,6 +20,7 @@ namespace FruktSharedLibrary.Internal
         private static ModCategory _iconCategory, _manyCategory, _emptyCategory, _longCategory, _sameAgain, _weapons;
         private static Sprite _categoryIcon;
         private static ModProp _categoryProp;
+        private static ModCategory _fitCategory;
 
         private static void AddTestCategories()
         {
@@ -41,6 +42,18 @@ namespace FruktSharedLibrary.Internal
             var mesh = Utilities.Meshes.ParseObj(TestBoxObj, "Self-test category box");
             mesh.hideFlags = HideFlags.DontUnloadUnusedAsset;
             _categoryProp = (ModProp)Inventory.AddProp("Self-test category box", mesh).WithCategory("Self-test icon");
+            // A picture with a small block off in one corner: its tab should show the block large and centred.
+            var padded = new Texture2D(64, 64) { hideFlags = HideFlags.DontUnloadUnusedAsset };
+            var clear = new Color[64 * 64];
+            for (int y = 40; y < 56; y++)
+                for (int x = 8; x < 24; x++)
+                    clear[y * 64 + x] = new Color(0.2f, 0.8f, 1f);
+            padded.SetPixels(clear);
+            padded.Apply();
+            var paddedIcon = Sprite.Create(padded, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f));
+            paddedIcon.hideFlags = HideFlags.DontUnloadUnusedAsset;
+            _fitCategory = Inventory.AddCategory("Self-test fit");
+            Inventory.AddTool("Self-test small picture", "Self-test fit").WithIcon(paddedIcon);
             for (int i = 1; i <= ManyItems; i++)
                 Inventory.AddTool($"Self-test filler {i}", ManyCategory).WithDescription("Fills a category past the game's 24 tiles.");
         }
@@ -94,6 +107,13 @@ namespace FruktSharedLibrary.Internal
                 Check("The tabs wrap into a second column", rects.Select(r => Mathf.Round(r.x)).Distinct().Count() == 2,
                     string.Join(" ", rects.Select(r => $"({r.x:0},{r.y:0})")));
                 Check("The items sit beside the tabs", rects.All(r => r.xMax <= field.xMin), $"field starts at {field.xMin:0}");
+                int fit = categories?.IndexOf("Self-test fit") ?? -1;
+                var pivot = fit >= 0 && fit < squares.Length ? squares[fit].m_iconDrawer?.m_iconOffsetPivot : null;
+                // The block is a quarter of the picture, so it's drawn 3.6 times bigger, and moved 36 units to the
+                // right and down to the middle of the 40-unit box.
+                Check("An automatic tab icon is scaled to fit and centred", pivot != null && Mathf.Abs(pivot.localScale.x - 3.6f) < 0.2f
+                    && Mathf.Abs(pivot.anchoredPosition.x - 36f) < 3f && Mathf.Abs(pivot.anchoredPosition.y + 36f) < 3f,
+                    $"scale {pivot?.localScale.x:0.##}, offset {pivot?.anchoredPosition}");
                 if (many >= 0 && many < squares.Length)
                     manySquare = squares[many].transform.Cast<RectTransform>();
                 Shot("categories-tabs");

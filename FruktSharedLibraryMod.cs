@@ -13,7 +13,7 @@ namespace FruktSharedLibrary
     public sealed class FruktSharedLibraryMod : MelonMod
     {
         /// <summary>Library version. Mods can compare against it to require a minimum version.</summary>
-        public const string Version = "0.3.8";
+        public const string Version = "0.3.9";
 
         /// <summary>The running library instance.</summary>
         public static FruktSharedLibraryMod Instance { get; private set; }

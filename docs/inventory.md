@@ -113,8 +113,9 @@ Inventory.AddProp("Barrel", bundle, "Barrel").WithCategory("Explosives");
 
 - Props go under Props unless you call `WithCategory` on them, as above. Tools and guns take the category when you
   add them, or with `WithCategory` too.
-- Without an icon, the tab shows the icon of its first item, or the Etc icon while it's empty. `WithIcon(sprite)`
-  changes it at any time.
+- Without an icon, the tab shows the icon of its first item, scaled up to fill the tab and centred, or the Etc
+  icon while it's empty. `WithIcon(sprite)` changes it at any time, and that icon is drawn as it is. (A picture
+  that can't be read, which is most pictures from bundles, is drawn at its own size.)
 - Mods that add a category with the same name share one tab. Adding one the game already has, like "Weapons", gives
   you the game's.
 - The terminal has room for seven tabs in a column. With more, they go into more columns, filled top to bottom, and

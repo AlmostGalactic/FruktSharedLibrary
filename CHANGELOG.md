@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.9
+
+Tested with MelonLoader 0.7.4 on the current FRUKT build
+
+- A category tab that shows its first item's icon scales the picture to fill the tab and centres it, like the game's
+  own tab icons. Before, item pictures were drawn small, with the empty space around them.
+
 ## 0.3.8
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build
