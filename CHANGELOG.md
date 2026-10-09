@@ -1,78 +1,40 @@
 # Changelog
 
-## 0.3.9
+## 0.4.0
 
 Tested with MelonLoader 0.7.4 on the current FRUKT build
 
-- A category tab that shows its first item's icon scales the picture to fill the tab and centres it, like the game's
-  own tab icons. Before, item pictures were drawn small, with the empty space around them.
+Everything from 0.3.1 to 0.3.9 in one update.
 
-## 0.3.8
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- `Inventory.AddCategory` adds your own tab to the terminal, with an icon, after the game's own. File tools, guns and
-  props under it by name; `WithCategory` moves any mod item, props included, into another category. Mods that add
-  the same category share it.
-- The terminal makes room for as many tabs as there are. Tabs that don't fit in one column go into more columns, and
-  the panel widens to fit them. A category's name shrinks to fit the header.
-- A category can hold more than 24 items. The game's grid stopped at 24; now it scrolls through all of them.
-
-## 0.3.7
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- `Tissue.Dissolve(limb, from, ...)` eats a limb away starting at a point, such as where something went in, and
-  spreads out from there with an uneven edge.
-
-## 0.3.6
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- Fixed: the game could crash when a body healed by `Tissue.Regrow` was deleted, if it had been shot. The game keeps a
-  list of the holes in each limb and never expects them to fill, so regrown voxels are now taken off that list.
-  Changes to a limb are also spaced a few frames apart, and the game gets lasting memory for them.
-- `Tissue.Dissolve` eats flesh away from the outside in, all of it or only some organs, such as the bones.
-
-## 0.3.5
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- `Tissue.Regrow` grows destroyed and damaged flesh back on a creature or a limb, out from what's left, over a few
-  seconds. Limbs that came off stay off.
-
-## 0.3.4
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- `Damage.Apply(collider, wounds)` makes several wounds on a part in one go, which is much cheaper than one call
-  for each.
-- `Damage` cuts wound radii down to 16 voxels (`Damage.MaxRadiusVoxels`). A sphere that size already reaches across
-  a whole limb, and bigger ones could take a tenth of a second each.
-
-## 0.3.3
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- `Effects` runs much faster. Its cubes are made a few at a time ahead of need instead of all at once when
-  something explodes, lights are reused and only a few shine at once, and `Explosion` uses fewer, bigger cubes.
-
-## 0.3.2
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
-
-- Fixed: `Effects.Explosion` smoke was nearly black and far too big up close. It is now grey and smaller.
-
-## 0.3.1
-
-Tested with MelonLoader 0.7.4 on the current FRUKT build
+New:
 
 - `Bullets.Launch` flies the game's own bullets (9mm, 7.62 or a 12-gauge pellet), so a mod gun wounds people
   exactly like the game's guns do: through the body, out the other side, with blood and the same impact sound.
-  `Bullets.Fire` and `Pierce` are still there for instant single wounds, and their documentation now says so.
+  `Bullets.Fire` and `Pierce` are still there for instant single wounds.
 - `Effects`: explosions, muzzle flashes, fire, smoke, sparks and debris made of cubes, with `Explosion`,
-  `MuzzleFlash`, `Burst`, `Smoke`, `Flame` and `Flash`.
-- Fixed: `WorldLabels` could stop working with an `InvalidCastException` after a label was shown for a while.
+  `MuzzleFlash`, `Burst`, `Smoke`, `Flame` and `Flash`. Cubes are made a few at a time ahead of need, so a big
+  explosion doesn't stall the game.
+- `Tissue.Regrow` grows destroyed and damaged flesh back on a creature or a limb, out from what's left, over a few
+  seconds. Limbs that came off stay off.
+- `Tissue.Dissolve` eats flesh away, all of it or only some organs, such as the bones. Given a point, such as where
+  something went in, it starts there and spreads out with an uneven edge.
+- `Inventory.AddCategory` adds your own tab to the terminal, after the game's own. File tools, guns and props under
+  it by name; `WithCategory` moves any mod item, props included, into another category. Mods that add the same
+  category share it.
+- The terminal makes room for as many tabs as there are: tabs that don't fit in one column go into more columns, and
+  the panel widens to fit them. A category can hold more than the game's 24 items, and long names shrink to fit
+  the header. A tab without its own icon shows its first item's, scaled to fill the tab.
+- `Damage.Apply(collider, wounds)` makes several wounds on a part in one go, which is much cheaper than one call
+  for each. Wound radii are capped at 16 voxels (`Damage.MaxRadiusVoxels`), since bigger ones could take a tenth of
+  a second each.
+
+Fixed:
+
+- `Textures.Solid` fills its texture one pixel at a time. Filling it from an array went through a copy in the
+  interop that could crash the game a while later.
+- The game could crash when a body healed by `Tissue.Regrow` was deleted, if it had been shot.
+- `WorldLabels` could stop working with an `InvalidCastException` after a label was shown for a while.
+- `Effects.Explosion` smoke was nearly black and far too big up close.
 
 ## 0.3.0
 

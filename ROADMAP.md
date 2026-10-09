@@ -69,44 +69,25 @@ Release steps:
 - [x] A full self-test run on the release build.
 - [x] Upload the DLL and XML docs to the GitHub release.
 
-## 0.3.1: released
+## 0.4.0: released
 
-- [x] `Bullets.Launch`, the game's own bullets for mod guns.
-- [x] `Effects`, cube explosions, muzzle flashes, fire, smoke and sparks.
-- [x] Fixed `WorldLabels` stopping after an invalid cast.
+Everything from 0.3.1 to 0.3.9, which went out as patches, in one update. The big features, which make more than
+five:
 
-## 0.3.2: released
+- [x] **The game's own bullets for mod guns.** `Bullets.Launch`.
+- [x] **Effects.** Cube explosions, muzzle flashes, fire, smoke and sparks.
+- [x] **Flesh that grows back.** `Tissue.Regrow`.
+- [x] **Flesh eaten away.** `Tissue.Dissolve`, from the outside in or from a point.
+- [x] **Your own terminal tabs.** `Inventory.AddCategory`, with tabs that wrap into more columns.
+- [x] **Several wounds at once.** `Damage.Apply` with a list of wounds.
 
-- [x] Fixed the explosion smoke in `Effects`.
+Also in it: fixes for a crash after `Tissue.Regrow`, `WorldLabels` stopping, and the explosion smoke.
 
-## 0.3.3: released
+Release steps:
 
-- [x] `Effects` explosions no longer stall the game.
-
-## 0.3.4: released
-
-- [x] `Damage.Apply` with several wounds at once, and a cap on wound size.
-
-## 0.3.5: released
-
-- [x] `Tissue.Regrow`, flesh that grows back.
-
-## 0.3.6: released
-
-- [x] Fixed a crash after `Tissue.Regrow`.
-- [x] `Tissue.Dissolve`, flesh eaten away.
-
-## 0.3.7: released
-
-- [x] `Tissue.Dissolve` from a point, with an uneven edge.
-
-## 0.3.8: released
-
-- [x] `Inventory.AddCategory`, your own tabs in the terminal, which wrap into more columns when there are many.
-
-## 0.3.9: released
-
-- [x] Automatic tab icons scaled to fit.
+- [x] Set the version to 0.4.0 and merge the 0.3.1 to 0.3.9 changelog entries into it.
+- [x] A full self-test run on the release build.
+- [x] Upload the DLL and XML docs to the GitHub release.
 
 ## Ideas for later
 
@@ -117,4 +98,3 @@ Nothing here is promised:
 - **One-line items from a bundle.** Props and tools that take their prefab and icon from a bundle by name.
 - **Self-tests for mods.** The library's in-game test tools (checks, screenshots, real clicks) opened up so mods
   can test themselves.
-- **The game's own bullets for mod guns.** Firing the game's bullet prefabs and recoil, rather than raycasts.

@@ -92,10 +92,13 @@ namespace FruktSharedLibrary.Utilities
             {
                 hideFlags = HideFlags.HideAndDontSave,
             };
-            var pixels = new Color[texture.width * texture.height];
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = color;
-            texture.SetPixels(pixels);
+            // One pixel at a time: filling from a C# array goes through an array copy in the interop that has
+            // crashed the game.
+            for (int y = 0; y < texture.height; y++)
+            {
+                for (int x = 0; x < texture.width; x++)
+                    texture.SetPixel(x, y, color);
+            }
             texture.Apply();
             return texture;
         }
